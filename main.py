@@ -1,4 +1,7 @@
 from fastapi import FastAPI
+from config import get_settings
+
+settings = get_settings()
 
 app = FastAPI(
     title="Chatbot Agendamento API",
@@ -18,3 +21,13 @@ def root():
 @app.get("/health")
 def health_check():
     return {"status": "healthy"}
+
+
+@app.get("/config-check")
+def config_check():
+    return {
+        "google_calendar_id": settings.google_calendar_id,
+        "trello_configured": bool(settings.trello_api_key and settings.trello_token),
+        "api_host": settings.api_host,
+        "api_port": settings.api_port
+    }
