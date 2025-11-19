@@ -1,5 +1,6 @@
 from fastapi import FastAPI
 from config import get_settings
+from services.google_calendar_service import test_calendar_connection
 
 settings = get_settings()
 
@@ -31,3 +32,11 @@ def config_check():
         "api_host": settings.api_host,
         "api_port": settings.api_port
     }
+
+
+@app.get("/test-google-calendar")
+def test_google_calendar():
+    """
+    Testa a conexão com o Google Calendar.
+    """
+    return test_calendar_connection()
