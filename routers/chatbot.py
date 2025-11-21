@@ -11,6 +11,7 @@ from services.google_calendar_service import (
     get_upcoming_events
 )
 from services.trello_service import create_trello_card
+from services.gemini_service import process_user_message
 from datetime import datetime
 
 router = APIRouter(
@@ -71,42 +72,193 @@ def process_chat_message(request: ChatMessage):
     3. Executar a ação apropriada
     4. Retornar resposta em linguagem natural
     """
-    # TODO: Implementar processamento com Gemini na próxima etapa
-    # Por enquanto, retorna uma resposta mock
-    
-    user_message = request.message.lower()
-    
-    # Mock simples para testar o fluxo
-    if "disponib" in user_message or "horário" in user_message or "quando" in user_message:
+    try:
+        # Processar mensagem com Gemini
+        ai_result = process_user_message(request.message)
+        
+        if not ai_result['success']:
+            return ChatMessageResponse(
+                message=ai_result['natural_response'],
+                intent_detected=ai_result['intent'],
+                parameters_extracted=ai_result.get('parameters', {}),
+                action_taken="error",
+                data={"error": ai_result.get('error', 'Erro desconhecido')}
+            )
+        
+        intent = ai_result['intent']
+        parameters = ai_result['parameters']
+        
+        # Se for greeting, apenas retornar a resposta natural
+        if intent == "greeting":
+            return ChatMessageResponse(
+                message=ai_result['natural_response'],
+                intent_detected=intent,
+                parameters_extracted=parameters,
+                action_taken="none"
+            )
+        
+        # Se for check_availability, buscar horários
+        if intent == "check_availability":
+            try:
+                days = parameters.get('days', 7)
+                available_slots = get_available_slots(days=days)
+                
+                if not available_slots:
+                    return ChatMessageResponse(
+                        message=f"Não encontrei horários disponíveis nos próximos {days} dias. Todos os slots estão ocupados.",
+                        intent_detected=intent,
+                        parameters_extracted=parameters,
+                        action_taken="check_availability",
+                        data={"available_slots": []}
+                    )
+                
+                # Formatar resposta
+                message_parts = [f"Encontrei horários disponíveis nos próximos {days} dias:\n"]
+                
+                for day in available_slots[:5]:  # Mostrar até 5 dias
+                    date_obj = datetime.strptime(day['date'], '%Y-%m-%d')
+                    date_formatted = date_obj.strftime('%d/%m/%Y')
+                    slots_str = ', '.join(day['slots'][:4])  # Mostrar até 4 horários por dia
+                    message_parts.append(f"📅 {date_formatted} ({day['day_of_week']}): {slots_str}")
+                
+                if len(available_slots) > 5:
+                    message_parts.append(f"\n... e mais {len(available_slots) - 5} dias disponíveis.")
+                
+                message_parts.append("\nQual data e horário você prefere?")
+                
+                return ChatMessageResponse(
+                    message="\n".join(message_parts),
+                    intent_detected=intent,
+                    parameters_extracted=parameters,
+                    action_taken="check_availability",
+                    data={"available_slots": available_slots}
+                )
+                
+            except FileNotFoundError:
+                return ChatMessageResponse(
+                    message="Desculpe, o Google Calendar ainda não está configurado. Configure as credenciais primeiro.",
+                    intent_detected=intent,
+                    parameters_extracted=parameters,
+                    action_taken="error"
+                )
+        
+        # Se for create_appointment, criar o agendamento
+        if intent == "create_appointment":
+            # Verificar se tem todos os parâmetros necessários
+            if 'start_datetime' not in parameters or 'end_datetime' not in parameters:
+                return ChatMessageResponse(
+                    message="Para agendar, preciso saber a data e o horário desejados. Por exemplo: 'Quero marcar uma consulta amanhã às 14h'",
+                    intent_detected=intent,
+                    parameters_extracted=parameters,
+                    action_taken="missing_parameters"
+                )
+            
+            try:
+                # Criar evento
+                calendar_event = create_calendar_event(
+                    title=parameters.get('title', 'Consulta'),
+                    start_datetime=datetime.fromisoformat(parameters['start_datetime']),
+                    end_datetime=datetime.fromisoformat(parameters['end_datetime']),
+                    description=parameters.get('description')
+                )
+                
+                # Tentar criar no Trello
+                trello_card = None
+                try:
+                    trello_card = create_trello_card(
+                        title=parameters.get('title', 'Consulta'),
+                        description=parameters.get('description'),
+                        start_datetime=datetime.fromisoformat(parameters['start_datetime']),
+                        due_datetime=datetime.fromisoformat(parameters['end_datetime']),
+                        calendar_event_link=calendar_event['event_link']
+                    )
+                except Exception:
+                    pass
+                
+                start_dt = datetime.fromisoformat(parameters['start_datetime'])
+                formatted_date = start_dt.strftime('%d/%m/%Y às %H:%M')
+                
+                message = f"✅ Consulta agendada com sucesso para {formatted_date}!\n\n"
+                message += f"📅 Evento criado no Google Calendar\n"
+                if trello_card:
+                    message += f"✅ Card criado no Trello\n"
+                message += f"\n🔗 Link: {calendar_event['event_link']}"
+                
+                return ChatMessageResponse(
+                    message=message,
+                    intent_detected=intent,
+                    parameters_extracted=parameters,
+                    action_taken="create_appointment",
+                    data={
+                        "calendar_event_id": calendar_event['event_id'],
+                        "event_link": calendar_event['event_link'],
+                        "trello_card_id": trello_card['card_id'] if trello_card else None
+                    }
+                )
+                
+            except FileNotFoundError:
+                return ChatMessageResponse(
+                    message="Desculpe, o Google Calendar ainda não está configurado. Configure as credenciais primeiro.",
+                    intent_detected=intent,
+                    parameters_extracted=parameters,
+                    action_taken="error"
+                )
+        
+        # Se for list_appointments, listar agendamentos
+        if intent == "list_appointments":
+            try:
+                events = get_upcoming_events(max_results=10)
+                
+                if not events:
+                    return ChatMessageResponse(
+                        message="Você não tem agendamentos futuros no momento. 📅\n\nGostaria de agendar uma nova consulta?",
+                        intent_detected=intent,
+                        parameters_extracted=parameters,
+                        action_taken="list_appointments",
+                        data={"appointments": []}
+                    )
+                
+                message_parts = [f"Você tem {len(events)} agendamento(s):\n"]
+                
+                for i, event in enumerate(events[:5], 1):
+                    start_dt = datetime.fromisoformat(event['start'].replace('Z', '+00:00'))
+                    formatted = start_dt.strftime('%d/%m/%Y às %H:%M')
+                    message_parts.append(f"{i}. {event['title']} - {formatted}")
+                
+                if len(events) > 5:
+                    message_parts.append(f"\n... e mais {len(events) - 5} agendamentos.")
+                
+                return ChatMessageResponse(
+                    message="\n".join(message_parts),
+                    intent_detected=intent,
+                    parameters_extracted=parameters,
+                    action_taken="list_appointments",
+                    data={"appointments": events}
+                )
+                
+            except FileNotFoundError:
+                return ChatMessageResponse(
+                    message="Desculpe, o Google Calendar ainda não está configurado. Configure as credenciais primeiro.",
+                    intent_detected=intent,
+                    parameters_extracted=parameters,
+                    action_taken="error"
+                )
+        
+        # Fallback
         return ChatMessageResponse(
-            message="Entendi que você quer verificar disponibilidade. Vou implementar isso com IA na próxima etapa!",
-            intent_detected="check_availability",
-            parameters_extracted={"days": 7},
-            action_taken="mock"
-        )
-    
-    elif "marcar" in user_message or "agendar" in user_message or "consulta" in user_message:
-        return ChatMessageResponse(
-            message="Entendi que você quer marcar uma consulta. Vou implementar isso com IA na próxima etapa!",
-            intent_detected="create_appointment",
-            parameters_extracted={},
-            action_taken="mock"
-        )
-    
-    elif "lista" in user_message or "meus agendamentos" in user_message:
-        return ChatMessageResponse(
-            message="Entendi que você quer ver seus agendamentos. Vou implementar isso com IA na próxima etapa!",
-            intent_detected="list_appointments",
-            parameters_extracted={},
-            action_taken="mock"
-        )
-    
-    else:
-        return ChatMessageResponse(
-            message="Olá! Posso te ajudar a:\n- Verificar disponibilidade\n- Marcar consultas\n- Listar seus agendamentos\n\nO que você precisa?",
-            intent_detected="greeting",
-            parameters_extracted={},
+            message=ai_result.get('natural_response', 'Como posso ajudar?'),
+            intent_detected=intent,
+            parameters_extracted=parameters,
             action_taken="none"
+        )
+        
+    except Exception as e:
+        return ChatMessageResponse(
+            message=f"Desculpe, ocorreu um erro: {str(e)}",
+            intent_detected="error",
+            parameters_extracted={},
+            action_taken="error",
+            data={"error": str(e)}
         )
 
 
