@@ -1,13 +1,12 @@
-// URL da API (ajuste se necessário)
 const API_URL = 'http://127.0.0.1:8000';
 
-// Elementos do DOM
+const SESSION_ID = 'session_' + Math.random().toString(36).substring(2, 15);
+
 const chatMessages = document.getElementById('chatMessages');
 const messageInput = document.getElementById('messageInput');
 const sendButton = document.getElementById('sendButton');
 const typingIndicator = document.getElementById('typingIndicator');
 
-// Event listeners
 sendButton.addEventListener('click', sendMessage);
 messageInput.addEventListener('keypress', (e) => {
     if (e.key === 'Enter') {
@@ -15,7 +14,40 @@ messageInput.addEventListener('keypress', (e) => {
     }
 });
 
-// Função para adicionar mensagem ao chat
+window.addEventListener('load', startConversation);
+
+async function startConversation() {
+    showTyping(true);
+    
+    try {
+        const response = await fetch(`${API_URL}/chatbot/message`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ 
+                message: "oi",
+                session_id: SESSION_ID
+            })
+        });
+        
+        if (!response.ok) {
+            throw new Error('Erro na comunicação com o servidor');
+        }
+        
+        const data = await response.json();
+        showTyping(false);
+        
+        chatMessages.innerHTML = '';
+        
+        addMessage(data.message);
+        
+    } catch (error) {
+        showTyping(false);
+        console.error('Erro:', error);
+    }
+}
+
 function addMessage(text, isUser = false) {
     const messageDiv = document.createElement('div');
     messageDiv.className = `message ${isUser ? 'user-message' : 'bot-message'}`;
@@ -23,21 +55,18 @@ function addMessage(text, isUser = false) {
     const contentDiv = document.createElement('div');
     contentDiv.className = 'message-content';
     
-    // Processar quebras de linha e formatação
-    const formattedText = text
-        .replace(/\n/g, '<br>')
+    let formattedText = text
         .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-        .replace(/📅|✅|🔗|⚠️|👋|🤖/g, (emoji) => `<span>${emoji}</span>`);
+        .replace(/\n/g, '<br>')
+        .replace(/📅|✅|🔗|⚠️|👋|🤖|🩺|🦷|👁️|❤️|👤|📞|📧|🏥|📍|📫|🗓️/g, (emoji) => `<span class="emoji">${emoji}</span>`);
     
-    contentDiv.innerHTML = `<p>${formattedText}</p>`;
+    contentDiv.innerHTML = formattedText;
     messageDiv.appendChild(contentDiv);
     chatMessages.appendChild(messageDiv);
     
-    // Scroll para o final
     chatMessages.scrollTop = chatMessages.scrollHeight;
 }
 
-// Função para mostrar/esconder indicador de digitação
 function showTyping(show = true) {
     typingIndicator.style.display = show ? 'flex' : 'none';
     if (show) {
@@ -45,31 +74,29 @@ function showTyping(show = true) {
     }
 }
 
-// Função para enviar mensagem
 async function sendMessage() {
     const message = messageInput.value.trim();
     
     if (!message) return;
     
-    // Adicionar mensagem do usuário
     addMessage(message, true);
     
-    // Limpar input e desabilitar botão
     messageInput.value = '';
     sendButton.disabled = true;
     messageInput.disabled = true;
     
-    // Mostrar indicador de digitação
     showTyping(true);
     
     try {
-        // Fazer requisição para a API
         const response = await fetch(`${API_URL}/chatbot/message`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
             },
-            body: JSON.stringify({ message: message })
+            body: JSON.stringify({ 
+                message: message,
+                session_id: SESSION_ID
+            })
         });
         
         if (!response.ok) {
@@ -78,10 +105,8 @@ async function sendMessage() {
         
         const data = await response.json();
         
-        // Esconder indicador de digitação
         showTyping(false);
         
-        // Adicionar resposta do bot
         addMessage(data.message);
         
     } catch (error) {
@@ -89,12 +114,24 @@ async function sendMessage() {
         addMessage('Desculpe, ocorreu um erro ao processar sua mensagem. Verifique se o servidor está rodando.');
         console.error('Erro:', error);
     } finally {
-        // Reabilitar input e botão
         sendButton.disabled = false;
         messageInput.disabled = false;
         messageInput.focus();
     }
 }
 
-// Focar no input ao carregar
+async function resetConversation() {
+    try {
+        await fetch(`${API_URL}/chatbot/reset?session_id=${SESSION_ID}`, {
+            method: 'POST'
+        });
+        
+        chatMessages.innerHTML = '';
+        startConversation();
+        
+    } catch (error) {
+        console.error('Erro ao reiniciar:', error);
+    }
+}
+
 messageInput.focus();

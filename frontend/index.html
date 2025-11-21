@@ -9,22 +9,14 @@
 <body>
     <div class="container">
         <div class="chat-header">
-            <h1>Agendamentos</h1>
-            <p>Pergunte sobre disponibilidade, marque consultas ou veja seus agendamentos</p>
+            <h1>🤖 Assistente de Agendamentos</h1>
+            <p>Agende sua consulta de forma rápida e fácil</p>
+            <button class="reset-button" onclick="resetConversation()">
+                🔄 Reiniciar
+            </button>
         </div>
 
         <div class="chat-messages" id="chatMessages">
-            <div class="message bot-message">
-                <div class="message-content">
-                    <p>Posso te ajudar a:</p>
-                    <ul>
-                        <li>Verificar horários disponíveis</li>
-                        <li>Marcar consultas</li>
-                        <li>Ver seus agendamentos</li>
-                    </ul>
-                    <p>Como posso ajudar?</p>
-                </div>
-            </div>
         </div>
 
         <div class="typing-indicator" id="typingIndicator" style="display: none;">
