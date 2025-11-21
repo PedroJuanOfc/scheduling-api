@@ -1,6 +1,12 @@
+// Debug: detectar reloads
+window.addEventListener('beforeunload', (e) => {
+    console.log('⚠️ PÁGINA VAI RECARREGAR!');
+});
+
+console.log('🚀 Script carregado');
+
 const API_URL = 'http://127.0.0.1:8000';
 
-// Usar sessionStorage para manter o SESSION_ID durante a sessão do navegador
 let SESSION_ID = sessionStorage.getItem('chatbot_session_id');
 let isNewSession = false;
 
@@ -10,15 +16,23 @@ if (!SESSION_ID) {
     isNewSession = true;
 }
 
+console.log('📋 Session ID:', SESSION_ID, '| Nova sessão:', isNewSession);
+
 const chatMessages = document.getElementById('chatMessages');
 const messageInput = document.getElementById('messageInput');
 const sendButton = document.getElementById('sendButton');
 const typingIndicator = document.getElementById('typingIndicator');
 
-sendButton.addEventListener('click', sendMessage);
+sendButton.addEventListener('click', function(e) {
+    e.preventDefault();
+    console.log('🖱️ Botão clicado');
+    sendMessage();
+});
+
 messageInput.addEventListener('keypress', (e) => {
     if (e.key === 'Enter' && !e.shiftKey) {
         e.preventDefault();
+        console.log('⌨️ Enter pressionado');
         sendMessage();
     }
 });
@@ -26,16 +40,16 @@ messageInput.addEventListener('keypress', (e) => {
 window.addEventListener('load', initChat);
 
 async function initChat() {
-    // Só mostrar apresentação se for uma sessão nova
+    console.log('🏁 initChat chamado');
     if (isNewSession) {
         await startConversation();
     } else {
-        // Sessão existente - mostrar mensagem de boas-vindas de volta
         addMessage("Olá novamente! 👋 Como posso te ajudar?\n\nVocê pode:\n• Agendar uma consulta\n• Ver horários disponíveis\n• Tirar dúvidas");
     }
 }
 
 async function startConversation() {
+    console.log('🎬 startConversation chamado');
     showTyping(true);
     
     try {
@@ -94,9 +108,15 @@ function showTyping(show = true) {
 }
 
 async function sendMessage() {
+    console.log('📤 sendMessage chamado');
     const message = messageInput.value.trim();
     
-    if (!message) return;
+    if (!message) {
+        console.log('⚠️ Mensagem vazia, retornando');
+        return;
+    }
+    
+    console.log('📤 Enviando:', message);
     
     addMessage(message, true);
     
@@ -118,11 +138,15 @@ async function sendMessage() {
             })
         });
         
+        console.log('📥 Response status:', response.status);
+        
         if (!response.ok) {
             throw new Error('Erro na comunicação com o servidor');
         }
         
         const data = await response.json();
+        
+        console.log('📥 Data recebida:', data);
         
         showTyping(false);
         
@@ -130,8 +154,8 @@ async function sendMessage() {
         
     } catch (error) {
         showTyping(false);
-        addMessage('Desculpe, ocorreu um erro ao processar sua mensagem. Verifique se o servidor está rodando.');
-        console.error('Erro:', error);
+        console.error('❌ Erro:', error);
+        addMessage('Desculpe, ocorreu um erro ao processar sua mensagem.');
     } finally {
         sendButton.disabled = false;
         messageInput.disabled = false;
@@ -140,12 +164,12 @@ async function sendMessage() {
 }
 
 async function resetConversation() {
+    console.log('🔄 resetConversation chamado');
     try {
         await fetch(`${API_URL}/chatbot/reset?session_id=${SESSION_ID}`, {
             method: 'POST'
         });
         
-        // Gerar novo session_id e marcar como nova sessão
         SESSION_ID = 'session_' + Math.random().toString(36).substring(2, 15);
         sessionStorage.setItem('chatbot_session_id', SESSION_ID);
         isNewSession = true;

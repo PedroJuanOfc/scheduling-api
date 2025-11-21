@@ -37,18 +37,13 @@ def init_database():
                 db.add(especialidade)
             
             db.commit()
-            print("✅ Especialidades padrão criadas com sucesso!")
-        else:
-            print(f"ℹ️ Banco de dados já contém {especialidades_existentes} especialidades")
     
     except Exception as e:
         db.rollback()
-        print(f"❌ Erro ao inicializar banco de dados: {e}")
+        print(f"Erro ao inicializar banco de dados: {e}")
     finally:
         db.close()
 
 
 if __name__ == "__main__":
-    print("🔧 Inicializando banco de dados...")
     init_database()
-    print("✅ Banco de dados inicializado!")

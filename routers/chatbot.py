@@ -3,7 +3,8 @@ from sqlalchemy.orm import Session
 from models.schemas import ChatMessage, ChatMessageResponse
 from services.google_calendar_service import get_available_slots, create_calendar_event
 from services.trello_service import create_trello_card
-from services.gemini_service import process_user_message
+from services.openai_service import process_user_message
+from services.rag_service import ask_question
 from services.conversation_service import (
     get_or_create_conversation,
     reset_conversation,
@@ -25,7 +26,6 @@ router = APIRouter(
 
 
 def format_disponibilidade(dias: int = 7) -> str:
-    """Formata a disponibilidade de forma legível"""
     try:
         slots = get_available_slots(days=dias)
         if not slots:
@@ -48,14 +48,43 @@ def format_disponibilidade(dias: int = 7) -> str:
         return f"Erro ao buscar disponibilidade: {str(e)}"
 
 
+def is_question_about_clinic(message: str) -> bool:
+    palavras_pergunta = [
+        'quanto', 'preço', 'valor', 'custa', 'custo',
+        'como funciona', 'o que é', 'o que são',
+        'quais são', 'quais os', 'quais as',
+        'aceita', 'convênio', 'convenio', 'plano',
+        'horário de funcionamento', 'abre', 'fecha',
+        'procedimento', 'exame', 'tratamento',
+        'inclui', 'incluso', 'incluido'
+    ]
+    msg_lower = message.lower()
+    return any(p in msg_lower for p in palavras_pergunta)
+
+
 @router.post("/message", response_model=ChatMessageResponse)
 def process_chat_message(request: ChatMessage, db: Session = Depends(get_db)):
-    """
-    Processa mensagens do chatbot com fluxo de conversa.
-    """
     session_id = request.session_id or "default"
     conversation = get_or_create_conversation(session_id)
     user_message = request.message.strip()
+    
+    # ==========================================
+    # PRIMEIRO: Verificar se é pergunta sobre a clínica (RAG)
+    # ==========================================
+    if is_question_about_clinic(user_message):
+        try:
+            rag_result = ask_question(user_message)
+            
+            if rag_result.get('success') and rag_result.get('answer'):
+                return ChatMessageResponse(
+                    message=rag_result['answer'] + "\n\nPosso te ajudar com mais alguma coisa? 😊",
+                    intent_detected="question",
+                    current_step=conversation.step,
+                    data_collected=conversation.data,
+                    action_taken="rag_response"
+                )
+        except Exception as e:
+            print(f"Erro no RAG: {e}")
     
     # Se é uma nova conversa, mostrar apresentação
     if conversation.step == "apresentacao":
@@ -68,7 +97,9 @@ def process_chat_message(request: ChatMessage, db: Session = Depends(get_db)):
             action_taken="apresentacao"
         )
     
-    # Processar mensagem com IA
+    # ==========================================
+    # SEGUNDO: Processar mensagem com IA
+    # ==========================================
     context = {
         "step": conversation.step,
         **conversation.data
@@ -95,9 +126,12 @@ def process_chat_message(request: ChatMessage, db: Session = Depends(get_db)):
     if extracted.get('start_datetime'):
         conversation.update(data_hora=extracted['start_datetime'])
     
-    # Se conversa está finalizada e usuário quer fazer algo novo
+    # ==========================================
+    # Se conversa está finalizada
+    # ==========================================
     if conversation.step == "finalizado":
-        if any(word in user_message.lower() for word in ['agendar', 'marcar', 'consulta', 'outra', 'nova']):
+        palavras_novo_agendamento = ['agendar', 'marcar', 'consulta', 'outra', 'nova']
+        if any(word in user_message.lower() for word in palavras_novo_agendamento):
             conversation.step = "coletando_dados"
             conversation.data = {
                 "nome": None,
@@ -120,51 +154,54 @@ def process_chat_message(request: ChatMessage, db: Session = Depends(get_db)):
                 action_taken="novo_agendamento"
             )
         
-        if any(word in user_message.lower() for word in ['disponível', 'disponivel', 'horários', 'horarios']):
-            disponibilidade = format_disponibilidade(7)
-            return ChatMessageResponse(
-                message=f"Claro! Aqui estão os horários disponíveis:\n\n{disponibilidade}\n\nGostaria de agendar uma consulta?",
-                intent_detected="check_availability",
-                current_step="finalizado",
-                data_collected=conversation.data,
-                action_taken="mostrando_disponibilidade"
-            )
-        
         # Resposta padrão para conversa finalizada
         return ChatMessageResponse(
-            message=ai_result.get('natural_response', 'Posso te ajudar com mais alguma coisa? Você pode agendar outra consulta ou verificar horários disponíveis.'),
+            message="Posso te ajudar com mais alguma coisa? Você pode agendar outra consulta ou tirar dúvidas sobre a clínica.",
             intent_detected=intent,
             current_step=conversation.step,
             data_collected=conversation.data,
-            action_taken="resposta_ia"
+            action_taken="resposta_finalizado"
         )
     
-    # VERIFICAR DISPONIBILIDADE
-    if intent == 'check_availability' or any(word in user_message.lower() for word in ['disponível', 'disponivel', 'horários', 'horarios', 'dias', 'quando']):
-        disponibilidade = format_disponibilidade(7)
-        
-        mensagem = disponibilidade + "\n\nQual data e horário você prefere?"
-        
-        if not conversation.data.get('especialidade_id'):
-            especialidades = get_all_especialidades()
-            lista = "\n".join([f"   {e['icone']} {e['nome']}" for e in especialidades])
-            mensagem = f"Para qual especialidade?\n\n{lista}\n\n{disponibilidade}"
-        
-        return ChatMessageResponse(
-            message=mensagem,
-            intent_detected="check_availability",
-            current_step=conversation.step,
-            data_collected=conversation.data,
-            action_taken="mostrando_disponibilidade"
-        )
+    # ==========================================
+    # VERIFICAR DISPONIBILIDADE (só se pedir explicitamente)
+    # ==========================================
+    palavras_disponibilidade = ['disponível', 'disponivel', 'horários', 'horarios', 'vagas', 'agenda']
+    if intent == 'check_availability' or any(word in user_message.lower() for word in palavras_disponibilidade):
+        # Só mostra disponibilidade se não for uma pergunta de preço
+        if not is_question_about_clinic(user_message):
+            disponibilidade = format_disponibilidade(7)
+            
+            mensagem = disponibilidade + "\n\nQual data e horário você prefere?"
+            
+            if not conversation.data.get('especialidade_id'):
+                especialidades = get_all_especialidades()
+                lista = "\n".join([f"   {e['icone']} {e['nome']}" for e in especialidades])
+                mensagem = f"Para qual especialidade?\n\n{lista}\n\n{disponibilidade}"
+            
+            return ChatMessageResponse(
+                message=mensagem,
+                intent_detected="check_availability",
+                current_step=conversation.step,
+                data_collected=conversation.data,
+                action_taken="mostrando_disponibilidade"
+            )
     
-    # Lógica de fluxo baseada na intenção
-    if intent == 'create_appointment' and conversation.step == "aguardando_intent":
-        conversation.update(intent=intent)
-        conversation.step = "coletando_dados"
+    # ==========================================
+    # Detectar intenção de agendamento
+    # ==========================================
+    palavras_agendamento = ['agendar', 'marcar', 'consulta', 'consultar', 'quero', 'gostaria', 'preciso']
     
-    # Se está coletando dados, verificar o que falta
-    if conversation.step == "coletando_dados" or intent in ['provide_name', 'provide_phone', 'provide_email', 'provide_specialty', 'create_appointment']:
+    if conversation.step == "aguardando_intent":
+        if intent == 'create_appointment' or any(p in user_message.lower() for p in palavras_agendamento):
+            intent = 'create_appointment'
+            conversation.update(intent=intent)
+            conversation.step = "coletando_dados"
+    
+    # ==========================================
+    # Coleta de dados para agendamento
+    # ==========================================
+    if conversation.step in ["coletando_dados", "aguardando_especialidade", "aguardando_nome", "aguardando_telefone", "aguardando_email", "aguardando_data"] or intent in ['provide_name', 'provide_phone', 'provide_email', 'provide_specialty', 'provide_datetime', 'create_appointment']:
         
         # Verificar especialidade
         if not conversation.data.get('especialidade_id'):
@@ -248,9 +285,9 @@ Está tudo certo? Responda **SIM** para confirmar ou **NÃO** para cancelar.""",
                 action_taken="solicitando_confirmacao"
             )
     
-    # Confirmação do agendamento
     if conversation.step == "confirmando":
-        if any(word in user_message.lower() for word in ['sim', 'confirmo', 'confirmar', 'ok', 'isso', 'correto', 's']):
+        palavras_confirmacao = ['sim', 'confirmo', 'confirmar', 'ok', 'isso', 'correto', 's']
+        if any(word in user_message.lower() for word in palavras_confirmacao):
             if conversation.is_complete():
                 try:
                     # Criar paciente no banco
@@ -284,9 +321,9 @@ Está tudo certo? Responda **SIM** para confirmar ou **NÃO** para cancelar.""",
                             due_datetime=data_hora.replace(hour=data_hora.hour + 1),
                             calendar_event_link=calendar_event.get('event_link')
                         )
-                    except:
-                        pass
-                    
+                    except Exception as trello_error:
+                        print(f"Erro no Trello {trello_error}")
+
                     # Salvar agendamento no banco
                     agendamento = Agendamento(
                         paciente_id=paciente.id,
@@ -301,7 +338,6 @@ Está tudo certo? Responda **SIM** para confirmar ou **NÃO** para cancelar.""",
                     data_fmt = data_hora.strftime('%d/%m/%Y às %H:%M')
                     dados_salvos = conversation.data.copy()
                     
-                    # Mudar step para finalizado mas NÃO resetar
                     conversation.step = "finalizado"
                     
                     return ChatMessageResponse(
@@ -323,7 +359,6 @@ Enviamos um email de confirmação para {dados_salvos['email']}.
 
 Precisa de mais alguma coisa? Posso te ajudar a:
 - Agendar outra consulta
-- Ver horários disponíveis
 - Tirar dúvidas sobre a clínica
 
 É só me chamar!""",
@@ -348,7 +383,8 @@ Precisa de mais alguma coisa? Posso te ajudar a:
                         action_taken="erro"
                     )
         
-        elif any(word in user_message.lower() for word in ['não', 'nao', 'cancelar', 'n']):
+        palavras_cancelamento = ['não', 'nao', 'cancelar', 'n']
+        if any(word in user_message.lower() for word in palavras_cancelamento):
             reset_conversation(session_id)
             return ChatMessageResponse(
                 message="Agendamento cancelado. Se precisar de algo, é só me chamar! 😊",
@@ -358,8 +394,11 @@ Precisa de mais alguma coisa? Posso te ajudar a:
                 action_taken="cancelado"
             )
     
+    # ==========================================
     # Cancelar em qualquer momento
-    if any(word in user_message.lower() for word in ['cancelar', 'voltar', 'recomeçar', 'desistir', 'sair']):
+    # ==========================================
+    palavras_cancelar = ['cancelar', 'voltar', 'recomeçar', 'desistir', 'sair']
+    if any(word in user_message.lower() for word in palavras_cancelar):
         reset_conversation(session_id)
         return ChatMessageResponse(
             message="Tudo bem! Conversa reiniciada. Se precisar de algo, é só me chamar! 😊",
@@ -369,26 +408,26 @@ Precisa de mais alguma coisa? Posso te ajudar a:
             action_taken="cancelado"
         )
     
-    # Resposta padrão da IA
+    # ==========================================
+    # Resposta padrão
+    # ==========================================
     return ChatMessageResponse(
-        message=ai_result.get('natural_response', 'Como posso ajudar? Você pode agendar uma consulta ou verificar horários disponíveis.'),
+        message="Como posso ajudar? Você pode:\n- Agendar uma consulta\n- Tirar dúvidas sobre preços e procedimentos",
         intent_detected=intent,
         current_step=conversation.step,
         data_collected=conversation.data,
-        action_taken="resposta_ia"
+        action_taken="resposta_padrao"
     )
 
 
 @router.post("/reset")
 def reset_chat(session_id: str = "default"):
-    """Reseta a conversa para o início."""
     reset_conversation(session_id)
     return {"message": "Conversa resetada", "session_id": session_id}
 
 
 @router.get("/health")
 def chatbot_health():
-    """Verifica se o endpoint do chatbot está funcionando."""
     return {
         "status": "ok",
         "message": "Chatbot endpoint is ready"

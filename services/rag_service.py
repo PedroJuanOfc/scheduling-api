@@ -14,7 +14,6 @@ vectorstore = None
 
 
 def get_embeddings():
-    """Retorna o modelo de embeddings da OpenAI."""
     return OpenAIEmbeddings(
         model="text-embedding-3-small",
         openai_api_key=settings.openai_api_key
@@ -22,7 +21,6 @@ def get_embeddings():
 
 
 def load_and_index_documents():
-    """Carrega PDFs e cria o índice vetorial."""
     global vectorstore
     
     if not settings.openai_api_key:
@@ -33,7 +31,6 @@ def load_and_index_documents():
     for filename in os.listdir(DOCUMENTS_DIR):
         if filename.endswith(".pdf"):
             filepath = os.path.join(DOCUMENTS_DIR, filename)
-            print(f"📄 Carregando: {filename}")
             loader = PyPDFLoader(filepath)
             documents.extend(loader.load())
     
@@ -43,10 +40,8 @@ def load_and_index_documents():
     # Dividir em chunks
     splitter = RecursiveCharacterTextSplitter(chunk_size=500, chunk_overlap=50)
     chunks = splitter.split_documents(documents)
-    print(f"📝 Dividido em {len(chunks)} chunks")
     
     # Criar embeddings e indexar
-    print("🔄 Gerando embeddings com OpenAI...")
     embeddings = get_embeddings()
     
     vectorstore = Chroma.from_documents(
@@ -55,12 +50,10 @@ def load_and_index_documents():
         persist_directory=CHROMA_DIR
     )
     
-    print("✅ Documentos indexados!")
     return {"success": True, "message": f"Indexados {len(chunks)} chunks"}
 
 
 def ask_question(question: str) -> dict:
-    """Faz uma pergunta baseada nos documentos."""
     global vectorstore
     
     if not settings.openai_api_key:

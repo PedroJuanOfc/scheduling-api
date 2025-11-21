@@ -73,11 +73,9 @@ Você pode:
     
 @router.post("/reindex")
 def reindex_documents():
-    """Reindexa todos os PDFs da pasta documents/"""
     return load_and_index_documents()
 
 
 @router.post("/ask")
 def ask_clinic_question(question: str):
-    """Faz uma pergunta sobre a clínica baseada nos documentos."""
     return ask_question(question)
