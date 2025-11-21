@@ -191,3 +191,116 @@ def get_available_slots(days: int = 30, slot_duration_minutes: int = 60):
         current_date += timedelta(days=1)
     
     return available_slots
+
+def create_calendar_event(
+    title: str,
+    start_datetime: datetime,
+    end_datetime: datetime,
+    description: str = None,
+    attendee_email: str = None
+):
+    """
+    Cria um novo evento no Google Calendar.
+    
+    Args:
+        title: Título do evento
+        start_datetime: Data e hora de início
+        end_datetime: Data e hora de fim
+        description: Descrição opcional do evento
+        attendee_email: Email opcional do participante
+    
+    Returns:
+        Dict com informações do evento criado
+    """
+    service = get_calendar_service()
+    calendar_id = settings.google_calendar_id
+    
+    # Montar o corpo do evento
+    event_body = {
+        'summary': title,
+        'start': {
+            'dateTime': start_datetime.isoformat(),
+            'timeZone': 'America/Sao_Paulo',
+        },
+        'end': {
+            'dateTime': end_datetime.isoformat(),
+            'timeZone': 'America/Sao_Paulo',
+        },
+        'reminders': {
+            'useDefault': False,
+            'overrides': [
+                {'method': 'email', 'minutes': 24 * 60},  # 1 dia antes
+                {'method': 'popup', 'minutes': 30},        # 30 minutos antes
+            ],
+        },
+    }
+    
+    # Adicionar descrição se fornecida
+    if description:
+        event_body['description'] = description
+    
+    # Adicionar participante se fornecido
+    if attendee_email:
+        event_body['attendees'] = [
+            {'email': attendee_email}
+        ]
+    
+    # Criar o evento
+    event = service.events().insert(
+        calendarId=calendar_id,
+        body=event_body,
+        sendUpdates='all'  # Envia notificações para participantes
+    ).execute()
+    
+    return {
+        'event_id': event.get('id'),
+        'event_link': event.get('htmlLink'),
+        'created': event.get('created'),
+        'summary': event.get('summary'),
+        'start': event['start'].get('dateTime'),
+        'end': event['end'].get('dateTime')
+    }
+
+
+def get_upcoming_events(max_results: int = 10):
+    """
+    Busca os próximos eventos do calendário.
+    
+    Args:
+        max_results: Número máximo de eventos a retornar
+    
+    Returns:
+        Lista de eventos futuros
+    """
+    service = get_calendar_service()
+    calendar_id = settings.google_calendar_id
+    
+    # Data e hora atual
+    now = datetime.utcnow().isoformat() + 'Z'
+    
+    # Buscar eventos
+    events_result = service.events().list(
+        calendarId=calendar_id,
+        timeMin=now,
+        maxResults=max_results,
+        singleEvents=True,
+        orderBy='startTime'
+    ).execute()
+    
+    events = events_result.get('items', [])
+    
+    formatted_events = []
+    for event in events:
+        start = event['start'].get('dateTime', event['start'].get('date'))
+        end = event['end'].get('dateTime', event['end'].get('date'))
+        
+        formatted_events.append({
+            'id': event.get('id'),
+            'title': event.get('summary', 'Sem título'),
+            'start': start,
+            'end': end,
+            'description': event.get('description', ''),
+            'link': event.get('htmlLink')
+        })
+    
+    return formatted_events

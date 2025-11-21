@@ -1,6 +1,10 @@
 from fastapi import APIRouter, HTTPException
 from models.schemas import AvailabilityRequest, AppointmentRequest, AppointmentResponse
-from services.google_calendar_service import get_available_slots
+from services.google_calendar_service import (
+    get_available_slots,
+    create_calendar_event,
+    get_upcoming_events
+)
 
 router = APIRouter(
     prefix="/scheduling",
@@ -47,14 +51,44 @@ def create_appointment(request: AppointmentRequest):
     """
     Cria um novo agendamento no Google Calendar e Trello.
     """
-    # TODO: Implementar lógica real na próxima etapa
-    return AppointmentResponse(
-        success=True,
-        message="Agendamento criado com sucesso (mock)",
-        calendar_event_id="mock_calendar_id_123",
-        trello_card_id="mock_trello_id_456",
-        event_link="https://calendar.google.com/event?eid=mock123"
-    )
+    try:
+        # Criar evento no Google Calendar
+        calendar_event = create_calendar_event(
+            title=request.title,
+            start_datetime=request.start_datetime,
+            end_datetime=request.end_datetime,
+            description=request.description,
+            attendee_email=request.attendee_email
+        )
+        
+        # TODO: Criar card no Trello na próxima etapa
+        
+        return AppointmentResponse(
+            success=True,
+            message="Agendamento criado com sucesso no Google Calendar",
+            calendar_event_id=calendar_event['event_id'],
+            trello_card_id=None,  # Será implementado na próxima etapa
+            event_link=calendar_event['event_link']
+        )
+        
+    except FileNotFoundError as e:
+        raise HTTPException(
+            status_code=503,
+            detail={
+                "success": False,
+                "error": str(e),
+                "message": "Google Calendar não configurado"
+            }
+        )
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail={
+                "success": False,
+                "error": str(e),
+                "message": "Erro ao criar agendamento"
+            }
+        )
 
 
 @router.get("/appointments")
@@ -62,14 +96,30 @@ def list_appointments():
     """
     Lista todos os agendamentos futuros.
     """
-    # TODO: Implementar lógica real
-    return {
-        "appointments": [
-            {
-                "id": "1",
-                "title": "Consulta com Dr. Silva",
-                "start": "2025-12-01T14:00:00",
-                "end": "2025-12-01T15:00:00"
+    try:
+        events = get_upcoming_events(max_results=20)
+        
+        return {
+            "success": True,
+            "total": len(events),
+            "appointments": events
+        }
+        
+    except FileNotFoundError as e:
+        raise HTTPException(
+            status_code=503,
+            detail={
+                "success": False,
+                "error": str(e),
+                "message": "Google Calendar não configurado"
             }
-        ]
-    }
+        )
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail={
+                "success": False,
+                "error": str(e),
+                "message": "Erro ao listar agendamentos"
+            }
+        )
