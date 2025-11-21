@@ -21,6 +21,12 @@ class Settings(BaseSettings):
     api_host: str = "0.0.0.0"
     api_port: int = 8000
     
+    # Informações da Clínica
+    clinica_nome: str = "Clínica Saúde Total"
+    clinica_endereco: str = "Rua Exemplo, 123 - Centro, Brasília - DF"
+    clinica_telefone: str = "(61) 3333-4444"
+    clinica_email: str = "contato@clinicasaudetotal.com.br"
+    
     class Config:
         env_file = ".env"
         case_sensitive = False

@@ -69,3 +69,7 @@ token.json
 *.pem
 *.key
 config_local.py
+
+# Banco de dados
+*.db
+*.db-journal
