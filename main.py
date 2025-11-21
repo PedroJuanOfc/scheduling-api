@@ -4,9 +4,13 @@ from config import get_settings
 from services.google_calendar_service import test_calendar_connection
 from services.trello_service import test_trello_connection
 from services.gemini_service import test_gemini_connection
-from routers import scheduling, chatbot
+from routers import scheduling, chatbot, clinica
+from database.database import engine
+from database.models import Base
 
 settings = get_settings()
+
+Base.metadata.create_all(bind=engine)
 
 app = FastAPI(
     title="Chatbot Agendamento API",
@@ -24,6 +28,7 @@ app.add_middleware(
 
 app.include_router(scheduling.router)
 app.include_router(chatbot.router)
+app.include_router(clinica.router)
 
 
 @app.get("/")
@@ -31,11 +36,13 @@ def root():
     return {
         "message": "API do Chatbot de Agendamento está funcionando!",
         "status": "online",
+        "clinica": settings.clinica_nome,
         "endpoints": {
             "docs": "/docs",
             "health": "/health",
-            "chatbot": "/chatbot/process",
-            "scheduling": "/scheduling"
+            "chatbot": "/chatbot/message",
+            "clinica": "/clinica/info",
+            "especialidades": "/clinica/especialidades"
         }
     }
 
@@ -51,6 +58,7 @@ def config_check():
         "google_calendar_id": settings.google_calendar_id,
         "trello_configured": bool(settings.trello_api_key and settings.trello_token),
         "gemini_configured": bool(settings.gemini_api_key),
+        "clinica_nome": settings.clinica_nome,
         "api_host": settings.api_host,
         "api_port": settings.api_port
     }
