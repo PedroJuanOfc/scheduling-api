@@ -3,7 +3,7 @@ from google_auth_oauthlib.flow import InstalledAppFlow
 from google.auth.transport.requests import Request
 from googleapiclient.discovery import build
 import os
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, time
 from config import get_settings
 
 settings = get_settings()
@@ -52,7 +52,7 @@ def get_calendar_service():
 
 def test_calendar_connection():
     """
-    Testa a conexão com o Google Calendar.'1    QA      '
+    Testa a conexão com o Google Calendar.
     Retorna informações básicas do calendário principal.
     """
     try:
@@ -80,3 +80,114 @@ def test_calendar_connection():
             "error": str(e),
             "message": "Erro ao conectar com Google Calendar"
         }
+
+
+def get_busy_times(start_date: datetime, end_date: datetime):
+    """
+    Busca todos os eventos ocupados no período especificado.
+    Retorna lista de intervalos ocupados.
+    """
+    service = get_calendar_service()
+    calendar_id = settings.google_calendar_id
+    
+    # Buscar eventos no período
+    events_result = service.events().list(
+        calendarId=calendar_id,
+        timeMin=start_date.isoformat() + 'Z',
+        timeMax=end_date.isoformat() + 'Z',
+        singleEvents=True,
+        orderBy='startTime'
+    ).execute()
+    
+    events = events_result.get('items', [])
+    
+    busy_times = []
+    for event in events:
+        start = event['start'].get('dateTime', event['start'].get('date'))
+        end = event['end'].get('dateTime', event['end'].get('date'))
+        
+        # Converter para datetime se necessário
+        if 'T' in start:  # É dateTime
+            start_dt = datetime.fromisoformat(start.replace('Z', '+00:00'))
+            end_dt = datetime.fromisoformat(end.replace('Z', '+00:00'))
+            
+            busy_times.append({
+                'start': start_dt,
+                'end': end_dt,
+                'title': event.get('summary', 'Sem título')
+            })
+    
+    return busy_times
+
+
+def get_available_slots(days: int = 30, slot_duration_minutes: int = 60):
+    """
+    Calcula os horários disponíveis nos próximos N dias.
+    
+    Args:
+        days: Número de dias para buscar
+        slot_duration_minutes: Duração de cada slot em minutos
+    
+    Returns:
+        Lista de datas com seus respectivos horários livres
+    """
+    # Configurações de horário de trabalho
+    work_start_hour = 9  # 9h
+    work_end_hour = 18   # 18h
+    
+    # Data inicial e final
+    now = datetime.now()
+    start_date = datetime.combine(now.date(), time(0, 0))
+    end_date = start_date + timedelta(days=days)
+    
+    # Buscar horários ocupados
+    busy_times = get_busy_times(start_date, end_date)
+    
+    available_slots = []
+    
+    # Iterar por cada dia
+    current_date = start_date
+    while current_date < end_date:
+        # Pular finais de semana (sábado=5, domingo=6)
+        if current_date.weekday() >= 5:
+            current_date += timedelta(days=1)
+            continue
+        
+        day_slots = []
+        
+        # Criar slots de horário para o dia
+        current_slot = datetime.combine(current_date.date(), time(work_start_hour, 0))
+        work_end = datetime.combine(current_date.date(), time(work_end_hour, 0))
+        
+        while current_slot < work_end:
+            slot_end = current_slot + timedelta(minutes=slot_duration_minutes)
+            
+            # Verificar se o slot está livre
+            is_free = True
+            for busy in busy_times:
+                # Remover informação de timezone para comparação
+                busy_start = busy['start'].replace(tzinfo=None)
+                busy_end = busy['end'].replace(tzinfo=None)
+                
+                # Checar sobreposição
+                if not (slot_end <= busy_start or current_slot >= busy_end):
+                    is_free = False
+                    break
+            
+            # Não incluir slots no passado
+            if current_slot > now and is_free:
+                day_slots.append(current_slot.strftime('%H:%M'))
+            
+            current_slot = slot_end
+        
+        # Adicionar dia se houver slots disponíveis
+        if day_slots:
+            available_slots.append({
+                'date': current_date.strftime('%Y-%m-%d'),
+                'day_of_week': current_date.strftime('%A'),
+                'slots': day_slots
+            })
+        
+        current_date += timedelta(days=1)
+    
+    return available_slots

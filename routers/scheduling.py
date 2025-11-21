@@ -1,5 +1,6 @@
 from fastapi import APIRouter, HTTPException
 from models.schemas import AvailabilityRequest, AppointmentRequest, AppointmentResponse
+from services.google_calendar_service import get_available_slots
 
 router = APIRouter(
     prefix="/scheduling",
@@ -13,20 +14,32 @@ def check_availability(request: AvailabilityRequest):
     Verifica a disponibilidade nos próximos N dias.
     Retorna os horários livres no Google Calendar.
     """
-    # TODO: Implementar lógica real na próxima etapa
-    return {
-        "message": f"Buscando disponibilidade para os próximos {request.days} dias",
-        "available_slots": [
-            {
-                "date": "2025-12-01",
-                "slots": ["09:00", "10:00", "14:00", "15:00"]
-            },
-            {
-                "date": "2025-12-02",
-                "slots": ["09:00", "11:00", "16:00"]
+    try:
+        available_slots = get_available_slots(days=request.days)
+        
+        return {
+            "success": True,
+            "total_days_with_availability": len(available_slots),
+            "available_slots": available_slots
+        }
+    except FileNotFoundError as e:
+        raise HTTPException(
+            status_code=503,
+            detail={
+                "success": False,
+                "error": str(e),
+                "message": "Google Calendar não configurado. Configure as credenciais primeiro."
             }
-        ]
-    }
+        )
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail={
+                "success": False,
+                "error": str(e),
+                "message": "Erro ao buscar disponibilidade"
+            }
+        )
 
 
 @router.post("/create-appointment", response_model=AppointmentResponse)
