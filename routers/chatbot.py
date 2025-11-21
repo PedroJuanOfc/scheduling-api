@@ -1,5 +1,10 @@
 from fastapi import APIRouter, HTTPException
-from models.schemas import ChatbotRequest, ChatbotResponse
+from models.schemas import (
+    ChatbotRequest, 
+    ChatbotResponse, 
+    ChatMessage, 
+    ChatMessageResponse
+)
 from services.google_calendar_service import (
     get_available_slots,
     create_calendar_event,
@@ -52,6 +57,56 @@ def process_chatbot_request(request: ChatbotRequest):
             intent=request.intent,
             message=f"Desculpe, ocorreu um erro ao processar sua solicitação: {str(e)}",
             data={"error": str(e)}
+        )
+
+
+@router.post("/message", response_model=ChatMessageResponse)
+def process_chat_message(request: ChatMessage):
+    """
+    Endpoint que recebe mensagens em texto natural do usuário.
+    
+    Processa a mensagem usando IA (Gemini) para:
+    1. Detectar a intenção do usuário
+    2. Extrair parâmetros relevantes
+    3. Executar a ação apropriada
+    4. Retornar resposta em linguagem natural
+    """
+    # TODO: Implementar processamento com Gemini na próxima etapa
+    # Por enquanto, retorna uma resposta mock
+    
+    user_message = request.message.lower()
+    
+    # Mock simples para testar o fluxo
+    if "disponib" in user_message or "horário" in user_message or "quando" in user_message:
+        return ChatMessageResponse(
+            message="Entendi que você quer verificar disponibilidade. Vou implementar isso com IA na próxima etapa!",
+            intent_detected="check_availability",
+            parameters_extracted={"days": 7},
+            action_taken="mock"
+        )
+    
+    elif "marcar" in user_message or "agendar" in user_message or "consulta" in user_message:
+        return ChatMessageResponse(
+            message="Entendi que você quer marcar uma consulta. Vou implementar isso com IA na próxima etapa!",
+            intent_detected="create_appointment",
+            parameters_extracted={},
+            action_taken="mock"
+        )
+    
+    elif "lista" in user_message or "meus agendamentos" in user_message:
+        return ChatMessageResponse(
+            message="Entendi que você quer ver seus agendamentos. Vou implementar isso com IA na próxima etapa!",
+            intent_detected="list_appointments",
+            parameters_extracted={},
+            action_taken="mock"
+        )
+    
+    else:
+        return ChatMessageResponse(
+            message="Olá! Posso te ajudar a:\n- Verificar disponibilidade\n- Marcar consultas\n- Listar seus agendamentos\n\nO que você precisa?",
+            intent_detected="greeting",
+            parameters_extracted={},
+            action_taken="none"
         )
 
 

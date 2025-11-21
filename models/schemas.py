@@ -81,3 +81,26 @@ class ChatbotResponse(BaseModel):
     message: str
     data: Optional[dict] = None
     suggestions: Optional[List[str]] = None
+
+
+class ChatMessage(BaseModel):
+    """Mensagem de texto do usuário"""
+    message: str = Field(..., description="Mensagem em texto natural do usuário")
+    
+    class Config:
+        json_schema_extra = {
+            "examples": [
+                {"message": "Quero marcar uma consulta para o dia 25"},
+                {"message": "Quais horários estão disponíveis na próxima semana?"},
+                {"message": "Lista meus agendamentos"}
+            ]
+        }
+
+
+class ChatMessageResponse(BaseModel):
+    """Resposta do chatbot para o usuário"""
+    message: str = Field(..., description="Resposta do chatbot")
+    intent_detected: Optional[str] = None
+    parameters_extracted: Optional[dict] = None
+    action_taken: Optional[str] = None
+    data: Optional[dict] = None
