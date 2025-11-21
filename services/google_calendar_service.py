@@ -52,7 +52,7 @@ def get_calendar_service():
 
 def test_calendar_connection():
     """
-    Testa a conexão com o Google Calendar.
+    Testa a conexão com o Google Calendar.'1    QA      '
     Retorna informações básicas do calendário principal.
     """
     try:

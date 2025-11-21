@@ -1,6 +1,7 @@
 from fastapi import FastAPI
 from config import get_settings
 from services.google_calendar_service import test_calendar_connection
+from services.trello_service import test_trello_connection
 
 settings = get_settings()
 
@@ -40,3 +41,11 @@ def test_google_calendar():
     Testa a conexão com o Google Calendar.
     """
     return test_calendar_connection()
+
+
+@app.get("/test-trello")
+def test_trello():
+    """
+    Testa a conexão com o Trello.
+    """
+    return test_trello_connection()
