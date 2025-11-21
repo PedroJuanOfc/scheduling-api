@@ -2,7 +2,7 @@ from fastapi import FastAPI
 from config import get_settings
 from services.google_calendar_service import test_calendar_connection
 from services.trello_service import test_trello_connection
-from routers import scheduling
+from routers import scheduling, chatbot
 
 settings = get_settings()
 
@@ -14,13 +14,20 @@ app = FastAPI(
 
 # Incluir routers
 app.include_router(scheduling.router)
+app.include_router(chatbot.router)
 
 
 @app.get("/")
 def root():
     return {
         "message": "API do Chatbot de Agendamento está funcionando!",
-        "status": "online"
+        "status": "online",
+        "endpoints": {
+            "docs": "/docs",
+            "health": "/health",
+            "chatbot": "/chatbot/process",
+            "scheduling": "/scheduling"
+        }
     }
 
 

@@ -1,6 +1,6 @@
 from pydantic import BaseModel, Field
 from datetime import datetime
-from typing import Optional
+from typing import Optional, List, Literal
 
 
 class AvailabilityRequest(BaseModel):
@@ -42,3 +42,42 @@ class AppointmentResponse(BaseModel):
     calendar_event_id: Optional[str] = None
     trello_card_id: Optional[str] = None
     event_link: Optional[str] = None
+
+
+class ChatbotRequest(BaseModel):
+    """Requisição do chatbot com intenção e parâmetros"""
+    intent: Literal["check_availability", "create_appointment", "list_appointments"]
+    parameters: dict = Field(default_factory=dict)
+    
+    class Config:
+        json_schema_extra = {
+            "examples": [
+                {
+                    "intent": "check_availability",
+                    "parameters": {"days": 7}
+                },
+                {
+                    "intent": "create_appointment",
+                    "parameters": {
+                        "title": "Consulta com Dr. Silva",
+                        "description": "Consulta de rotina",
+                        "start_datetime": "2025-12-01T14:00:00",
+                        "end_datetime": "2025-12-01T15:00:00",
+                        "attendee_email": "paciente@email.com"
+                    }
+                },
+                {
+                    "intent": "list_appointments",
+                    "parameters": {}
+                }
+            ]
+        }
+
+
+class ChatbotResponse(BaseModel):
+    """Resposta estruturada para o chatbot"""
+    success: bool
+    intent: str
+    message: str
+    data: Optional[dict] = None
+    suggestions: Optional[List[str]] = None

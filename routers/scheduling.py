@@ -5,6 +5,7 @@ from services.google_calendar_service import (
     create_calendar_event,
     get_upcoming_events
 )
+from services.trello_service import create_trello_card
 
 router = APIRouter(
     prefix="/scheduling",
@@ -51,8 +52,11 @@ def create_appointment(request: AppointmentRequest):
     """
     Cria um novo agendamento no Google Calendar e Trello.
     """
+    calendar_event = None
+    trello_card = None
+    
     try:
-        # Criar evento no Google Calendar
+        # 1. Criar evento no Google Calendar
         calendar_event = create_calendar_event(
             title=request.title,
             start_datetime=request.start_datetime,
@@ -61,13 +65,27 @@ def create_appointment(request: AppointmentRequest):
             attendee_email=request.attendee_email
         )
         
-        # TODO: Criar card no Trello na próxima etapa
+        # 2. Criar card no Trello
+        try:
+            trello_card = create_trello_card(
+                title=request.title,
+                description=request.description,
+                start_datetime=request.start_datetime,
+                due_datetime=request.end_datetime,
+                calendar_event_link=calendar_event['event_link']
+            )
+        except Exception as trello_error:
+            # Se falhar no Trello, registrar mas não falhar a requisição
+            # O evento já foi criado no Calendar
+            print(f"Aviso: Erro ao criar card no Trello: {trello_error}")
         
         return AppointmentResponse(
             success=True,
-            message="Agendamento criado com sucesso no Google Calendar",
+            message="Agendamento criado com sucesso" + (
+                " no Google Calendar e Trello" if trello_card else " no Google Calendar (Trello não configurado)"
+            ),
             calendar_event_id=calendar_event['event_id'],
-            trello_card_id=None,  # Será implementado na próxima etapa
+            trello_card_id=trello_card['card_id'] if trello_card else None,
             event_link=calendar_event['event_link']
         )
         
