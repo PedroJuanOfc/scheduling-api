@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chatbot Agendamento</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <div class="chat-header">
+            <h1>🤖 Assistente de Agendamentos</h1>
+            <p>Pergunte sobre disponibilidade, marque consultas ou veja seus agendamentos</p>
+        </div>
+
+        <div class="chat-messages" id="chatMessages">
+            <div class="message bot-message">
+                <div class="message-content">
+                    <p>Olá! 👋 Sou seu assistente de agendamentos.</p>
+                    <p>Posso te ajudar a:</p>
+                    <ul>
+                        <li>Verificar horários disponíveis</li>
+                        <li>Marcar consultas</li>
+                        <li>Ver seus agendamentos</li>
+                    </ul>
+                    <p>Como posso ajudar?</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="typing-indicator" id="typingIndicator" style="display: none;">
+            <span></span>
+            <span></span>
+            <span></span>
+        </div>
+
+        <div class="chat-input">
+            <input 
+                type="text" 
+                id="messageInput" 
+                placeholder="Digite sua mensagem..."
+                autocomplete="off"
+            >
+            <button id="sendButton">
+                Enviar
+            </button>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>

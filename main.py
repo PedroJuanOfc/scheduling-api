@@ -1,4 +1,5 @@
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 from config import get_settings
 from services.google_calendar_service import test_calendar_connection
 from services.trello_service import test_trello_connection
@@ -13,7 +14,14 @@ app = FastAPI(
     version="0.1.0"
 )
 
-# Incluir routers
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 app.include_router(scheduling.router)
 app.include_router(chatbot.router)
 
@@ -50,34 +58,14 @@ def config_check():
 
 @app.get("/test-google-calendar")
 def test_google_calendar():
-    """
-    Testa a conexão com o Google Calendar.
-    """
     return test_calendar_connection()
 
 
 @app.get("/test-trello")
 def test_trello():
-    """
-    Testa a conexão com o Trello.
-    """
     return test_trello_connection()
 
 
 @app.get("/test-gemini")
 def test_gemini():
-    """
-    Testa a conexão com o Google Gemini.
-    """
     return test_gemini_connection()
-
-from services.gemini_service import test_gemini_connection, list_available_models
-
-# ... (resto do código)
-
-@app.get("/list-gemini-models")
-def list_models():
-    """
-    Lista modelos disponíveis do Gemini.
-    """
-    return list_available_models()

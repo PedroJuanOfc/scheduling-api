@@ -416,7 +416,6 @@ def handle_list_appointments(parameters: dict) -> ChatbotResponse:
 
 @router.get("/health")
 def chatbot_health():
-    """Verifica se o endpoint do chatbot está funcionando"""
     return {
         "status": "ok",
         "message": "Chatbot endpoint is ready",
