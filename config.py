@@ -1,3 +1,4 @@
+import os
 from pydantic_settings import BaseSettings
 from functools import lru_cache
 
@@ -16,6 +17,9 @@ class Settings(BaseSettings):
     
     # Google Gemini
     gemini_api_key: str = ""
+    
+    # OpenAI
+    openai_api_key: str = os.getenv("OPENAI_API_KEY", "")
     
     # API
     api_host: str = "0.0.0.0"

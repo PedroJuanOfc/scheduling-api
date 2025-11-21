@@ -73,3 +73,7 @@ config_local.py
 # Banco de dados
 *.db
 *.db-journal
+
+# RAG - dados gerados
+chroma_db/
+documents/

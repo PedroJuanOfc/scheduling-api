@@ -3,6 +3,7 @@ from sqlalchemy.orm import Session
 from database.database import get_db
 from database.models import Especialidade
 from config import get_settings
+from services.rag_service import load_and_index_documents, ask_question
 
 settings = get_settings()
 
@@ -69,3 +70,14 @@ Você pode:
         },
         "especialidades": [esp.nome for esp in especialidades]
     }
+    
+@router.post("/reindex")
+def reindex_documents():
+    """Reindexa todos os PDFs da pasta documents/"""
+    return load_and_index_documents()
+
+
+@router.post("/ask")
+def ask_clinic_question(question: str):
+    """Faz uma pergunta sobre a clínica baseada nos documentos."""
+    return ask_question(question)
