@@ -7,9 +7,6 @@ settings = get_settings()
 
 
 def get_gemini_model():
-    """
-    Configura e retorna o modelo Gemini.
-    """
     if not settings.gemini_api_key:
         raise ValueError(
             "GEMINI_API_KEY não configurada. "
@@ -25,10 +22,6 @@ def get_gemini_model():
 
 
 def test_gemini_connection():
-    """
-    Testa a conexão com o Gemini.
-    Faz uma pergunta simples para verificar se está funcionando.
-    """
     try:
         model = get_gemini_model()
         
@@ -57,9 +50,6 @@ def test_gemini_connection():
 
 
 def list_available_models():
-    """
-    Lista todos os modelos disponíveis para sua API Key.
-    """
     try:
         genai.configure(api_key=settings.gemini_api_key)
         models = genai.list_models()
@@ -83,15 +73,6 @@ def list_available_models():
 
 
 def process_user_message(user_message: str) -> dict:
-    """
-    Processa a mensagem do usuário usando Gemini para detectar intenção e extrair parâmetros.
-    
-    Args:
-        user_message: Mensagem em texto natural do usuário
-    
-    Returns:
-        Dict com intent, parameters e outras informações
-    """
     model = get_gemini_model()
     
     # Data atual para contexto

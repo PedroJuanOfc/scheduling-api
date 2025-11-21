@@ -15,10 +15,6 @@ router = APIRouter(
 
 @router.post("/check-availability")
 def check_availability(request: AvailabilityRequest):
-    """
-    Verifica a disponibilidade nos próximos N dias.
-    Retorna os horários livres no Google Calendar.
-    """
     try:
         available_slots = get_available_slots(days=request.days)
         
@@ -49,9 +45,6 @@ def check_availability(request: AvailabilityRequest):
 
 @router.post("/create-appointment", response_model=AppointmentResponse)
 def create_appointment(request: AppointmentRequest):
-    """
-    Cria um novo agendamento no Google Calendar e Trello.
-    """
     calendar_event = None
     trello_card = None
     
@@ -111,9 +104,6 @@ def create_appointment(request: AppointmentRequest):
 
 @router.get("/appointments")
 def list_appointments():
-    """
-    Lista todos os agendamentos futuros.
-    """
     try:
         events = get_upcoming_events(max_results=20)
         

@@ -4,7 +4,6 @@ from typing import Optional, List, Literal
 
 
 class AvailabilityRequest(BaseModel):
-    """Requisição para buscar disponibilidade"""
     days: int = Field(default=30, description="Número de dias para buscar disponibilidade")
     
     class Config:
@@ -16,7 +15,6 @@ class AvailabilityRequest(BaseModel):
 
 
 class AppointmentRequest(BaseModel):
-    """Requisição para criar um agendamento"""
     title: str = Field(..., description="Título do agendamento")
     description: Optional[str] = Field(None, description="Descrição do agendamento")
     start_datetime: datetime = Field(..., description="Data e hora de início")
@@ -36,7 +34,6 @@ class AppointmentRequest(BaseModel):
 
 
 class AppointmentResponse(BaseModel):
-    """Resposta após criar um agendamento"""
     success: bool
     message: str
     calendar_event_id: Optional[str] = None
@@ -45,7 +42,6 @@ class AppointmentResponse(BaseModel):
 
 
 class ChatbotRequest(BaseModel):
-    """Requisição do chatbot com intenção e parâmetros"""
     intent: Literal["check_availability", "create_appointment", "list_appointments"]
     parameters: dict = Field(default_factory=dict)
     
@@ -75,7 +71,6 @@ class ChatbotRequest(BaseModel):
 
 
 class ChatbotResponse(BaseModel):
-    """Resposta estruturada para o chatbot"""
     success: bool
     intent: str
     message: str
@@ -84,7 +79,6 @@ class ChatbotResponse(BaseModel):
 
 
 class ChatMessage(BaseModel):
-    """Mensagem de texto do usuário"""
     message: str = Field(..., description="Mensagem em texto natural do usuário")
     
     class Config:
@@ -98,7 +92,6 @@ class ChatMessage(BaseModel):
 
 
 class ChatMessageResponse(BaseModel):
-    """Resposta do chatbot para o usuário"""
     message: str = Field(..., description="Resposta do chatbot")
     intent_detected: Optional[str] = None
     parameters_extracted: Optional[dict] = None

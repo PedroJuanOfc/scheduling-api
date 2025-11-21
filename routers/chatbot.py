@@ -22,12 +22,6 @@ router = APIRouter(
 
 @router.post("/process", response_model=ChatbotResponse)
 def process_chatbot_request(request: ChatbotRequest):
-    """
-    Endpoint principal para o chatbot processar requisições.
-    
-    O chatbot envia a intenção detectada e os parâmetros extraídos.
-    Este endpoint executa a ação apropriada e retorna resposta estruturada.
-    """
     try:
         if request.intent == "check_availability":
             return handle_check_availability(request.parameters)
@@ -63,15 +57,6 @@ def process_chatbot_request(request: ChatbotRequest):
 
 @router.post("/message", response_model=ChatMessageResponse)
 def process_chat_message(request: ChatMessage):
-    """
-    Endpoint que recebe mensagens em texto natural do usuário.
-    
-    Processa a mensagem usando IA (Gemini) para:
-    1. Detectar a intenção do usuário
-    2. Extrair parâmetros relevantes
-    3. Executar a ação apropriada
-    4. Retornar resposta em linguagem natural
-    """
     try:
         # Processar mensagem com Gemini
         ai_result = process_user_message(request.message)
@@ -263,7 +248,6 @@ def process_chat_message(request: ChatMessage):
 
 
 def handle_check_availability(parameters: dict) -> ChatbotResponse:
-    """Processa solicitação de verificação de disponibilidade"""
     days = parameters.get("days", 30)
     
     available_slots = get_available_slots(days=days)
@@ -305,7 +289,6 @@ def handle_check_availability(parameters: dict) -> ChatbotResponse:
 
 
 def handle_create_appointment(parameters: dict) -> ChatbotResponse:
-    """Processa solicitação de criação de agendamento"""
     # Validar parâmetros obrigatórios
     required_fields = ["title", "start_datetime", "end_datetime"]
     missing_fields = [field for field in required_fields if field not in parameters]
@@ -376,7 +359,6 @@ def handle_create_appointment(parameters: dict) -> ChatbotResponse:
 
 
 def handle_list_appointments(parameters: dict) -> ChatbotResponse:
-    """Processa solicitação de listagem de agendamentos"""
     max_results = parameters.get("max_results", 10)
     
     events = get_upcoming_events(max_results=max_results)

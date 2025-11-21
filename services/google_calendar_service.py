@@ -13,10 +13,6 @@ SCOPES = ['https://www.googleapis.com/auth/calendar']
 
 
 def get_calendar_service():
-    """
-    Obtém o serviço autenticado do Google Calendar.
-    Gerencia automaticamente a autenticação e refresh de tokens.
-    """
     creds = None
     token_file = settings.google_calendar_token_file
     credentials_file = settings.google_calendar_credentials_file
@@ -51,10 +47,6 @@ def get_calendar_service():
 
 
 def test_calendar_connection():
-    """
-    Testa a conexão com o Google Calendar.
-    Retorna informações básicas do calendário principal.
-    """
     try:
         service = get_calendar_service()
         calendar_id = settings.google_calendar_id
@@ -83,10 +75,6 @@ def test_calendar_connection():
 
 
 def get_busy_times(start_date: datetime, end_date: datetime):
-    """
-    Busca todos os eventos ocupados no período especificado.
-    Retorna lista de intervalos ocupados.
-    """
     service = get_calendar_service()
     calendar_id = settings.google_calendar_id
     
@@ -121,16 +109,6 @@ def get_busy_times(start_date: datetime, end_date: datetime):
 
 
 def get_available_slots(days: int = 30, slot_duration_minutes: int = 60):
-    """
-    Calcula os horários disponíveis nos próximos N dias.
-    
-    Args:
-        days: Número de dias para buscar
-        slot_duration_minutes: Duração de cada slot em minutos
-    
-    Returns:
-        Lista de datas com seus respectivos horários livres
-    """
     # Configurações de horário de trabalho
     work_start_hour = 9  # 9h
     work_end_hour = 18   # 18h
@@ -199,19 +177,6 @@ def create_calendar_event(
     description: str = None,
     attendee_email: str = None
 ):
-    """
-    Cria um novo evento no Google Calendar.
-    
-    Args:
-        title: Título do evento
-        start_datetime: Data e hora de início
-        end_datetime: Data e hora de fim
-        description: Descrição opcional do evento
-        attendee_email: Email opcional do participante
-    
-    Returns:
-        Dict com informações do evento criado
-    """
     service = get_calendar_service()
     calendar_id = settings.google_calendar_id
     
@@ -263,15 +228,6 @@ def create_calendar_event(
 
 
 def get_upcoming_events(max_results: int = 10):
-    """
-    Busca os próximos eventos do calendário.
-    
-    Args:
-        max_results: Número máximo de eventos a retornar
-    
-    Returns:
-        Lista de eventos futuros
-    """
     service = get_calendar_service()
     calendar_id = settings.google_calendar_id
     

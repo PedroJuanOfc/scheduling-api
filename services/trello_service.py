@@ -6,9 +6,6 @@ settings = get_settings()
 
 
 def get_trello_client():
-    """
-    Obtém o cliente autenticado do Trello.
-    """
     if not settings.trello_api_key or not settings.trello_token:
         raise ValueError(
             "Credenciais do Trello não configuradas. "
@@ -24,10 +21,6 @@ def get_trello_client():
 
 
 def test_trello_connection():
-    """
-    Testa a conexão com o Trello.
-    Retorna informações básicas do board configurado.
-    """
     try:
         client = get_trello_client()
         
@@ -75,19 +68,6 @@ def create_trello_card(
     due_datetime: datetime = None,
     calendar_event_link: str = None
 ):
-    """
-    Cria um novo card no Trello.
-    
-    Args:
-        title: Título do card
-        description: Descrição do card
-        start_datetime: Data e hora de início (opcional)
-        due_datetime: Data e hora de vencimento
-        calendar_event_link: Link do evento no Google Calendar
-    
-    Returns:
-        Dict com informações do card criado
-    """
     client = get_trello_client()
     
     # Verificar se list_id está configurado
@@ -143,15 +123,6 @@ def create_trello_card(
 
 
 def get_trello_cards(limit: int = 20):
-    """
-    Busca os cards da lista configurada.
-    
-    Args:
-        limit: Número máximo de cards a retornar
-    
-    Returns:
-        Lista de cards
-    """
     client = get_trello_client()
     
     if not settings.trello_list_id:
