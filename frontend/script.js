@@ -1,6 +1,14 @@
 const API_URL = 'http://127.0.0.1:8000';
 
-const SESSION_ID = 'session_' + Math.random().toString(36).substring(2, 15);
+// Usar sessionStorage para manter o SESSION_ID durante a sessão do navegador
+let SESSION_ID = sessionStorage.getItem('chatbot_session_id');
+let isNewSession = false;
+
+if (!SESSION_ID) {
+    SESSION_ID = 'session_' + Math.random().toString(36).substring(2, 15);
+    sessionStorage.setItem('chatbot_session_id', SESSION_ID);
+    isNewSession = true;
+}
 
 const chatMessages = document.getElementById('chatMessages');
 const messageInput = document.getElementById('messageInput');
@@ -9,12 +17,23 @@ const typingIndicator = document.getElementById('typingIndicator');
 
 sendButton.addEventListener('click', sendMessage);
 messageInput.addEventListener('keypress', (e) => {
-    if (e.key === 'Enter') {
+    if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
         sendMessage();
     }
 });
 
-window.addEventListener('load', startConversation);
+window.addEventListener('load', initChat);
+
+async function initChat() {
+    // Só mostrar apresentação se for uma sessão nova
+    if (isNewSession) {
+        await startConversation();
+    } else {
+        // Sessão existente - mostrar mensagem de boas-vindas de volta
+        addMessage("Olá novamente! 👋 Como posso te ajudar?\n\nVocê pode:\n• Agendar uma consulta\n• Ver horários disponíveis\n• Tirar dúvidas");
+    }
+}
 
 async function startConversation() {
     showTyping(true);
@@ -39,11 +58,11 @@ async function startConversation() {
         showTyping(false);
         
         chatMessages.innerHTML = '';
-        
         addMessage(data.message);
         
     } catch (error) {
         showTyping(false);
+        addMessage('Erro ao conectar com o servidor. Verifique se o backend está rodando.');
         console.error('Erro:', error);
     }
 }
@@ -58,7 +77,7 @@ function addMessage(text, isUser = false) {
     let formattedText = text
         .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
         .replace(/\n/g, '<br>')
-        .replace(/📅|✅|🔗|⚠️|👋|🤖|🩺|🦷|👁️|❤️|👤|📞|📧|🏥|📍|📫|🗓️/g, (emoji) => `<span class="emoji">${emoji}</span>`);
+        .replace(/📅|✅|🔗|⚠️|👋|🤖|🩺|🦷|👁️|❤️|👤|📞|📧|🏥|📍|📫|🗓️|😊|•/g, (match) => `<span class="emoji">${match}</span>`);
     
     contentDiv.innerHTML = formattedText;
     messageDiv.appendChild(contentDiv);
@@ -126,8 +145,13 @@ async function resetConversation() {
             method: 'POST'
         });
         
+        // Gerar novo session_id e marcar como nova sessão
+        SESSION_ID = 'session_' + Math.random().toString(36).substring(2, 15);
+        sessionStorage.setItem('chatbot_session_id', SESSION_ID);
+        isNewSession = true;
+        
         chatMessages.innerHTML = '';
-        startConversation();
+        await startConversation();
         
     } catch (error) {
         console.error('Erro ao reiniciar:', error);

@@ -35,7 +35,6 @@ def format_disponibilidade(dias: int = 7) -> str:
         for dia in slots[:5]:
             data_obj = datetime.strptime(dia['date'], '%Y-%m-%d')
             data_fmt = data_obj.strftime('%d/%m/%Y (%A)')
-            # Traduzir dias da semana
             data_fmt = data_fmt.replace('Monday', 'Segunda').replace('Tuesday', 'Terça')
             data_fmt = data_fmt.replace('Wednesday', 'Quarta').replace('Thursday', 'Quinta')
             data_fmt = data_fmt.replace('Friday', 'Sexta').replace('Saturday', 'Sábado')
@@ -96,7 +95,51 @@ def process_chat_message(request: ChatMessage, db: Session = Depends(get_db)):
     if extracted.get('start_datetime'):
         conversation.update(data_hora=extracted['start_datetime'])
     
-    # VERIFICAR DISPONIBILIDADE - Quando usuário pede para ver horários
+    # Se conversa está finalizada e usuário quer fazer algo novo
+    if conversation.step == "finalizado":
+        if any(word in user_message.lower() for word in ['agendar', 'marcar', 'consulta', 'outra', 'nova']):
+            conversation.step = "coletando_dados"
+            conversation.data = {
+                "nome": None,
+                "telefone": None,
+                "email": None,
+                "especialidade_id": None,
+                "especialidade_nome": None,
+                "data_hora": None,
+                "intent": "create_appointment"
+            }
+            
+            especialidades = get_all_especialidades()
+            lista = "\n".join([f"   {e['icone']} {e['nome']}" for e in especialidades])
+            
+            return ChatMessageResponse(
+                message=f"Claro! Vamos agendar outra consulta.\n\nPara qual especialidade?\n\n{lista}",
+                intent_detected="create_appointment",
+                current_step="aguardando_especialidade",
+                data_collected=conversation.data,
+                action_taken="novo_agendamento"
+            )
+        
+        if any(word in user_message.lower() for word in ['disponível', 'disponivel', 'horários', 'horarios']):
+            disponibilidade = format_disponibilidade(7)
+            return ChatMessageResponse(
+                message=f"Claro! Aqui estão os horários disponíveis:\n\n{disponibilidade}\n\nGostaria de agendar uma consulta?",
+                intent_detected="check_availability",
+                current_step="finalizado",
+                data_collected=conversation.data,
+                action_taken="mostrando_disponibilidade"
+            )
+        
+        # Resposta padrão para conversa finalizada
+        return ChatMessageResponse(
+            message=ai_result.get('natural_response', 'Posso te ajudar com mais alguma coisa? Você pode agendar outra consulta ou verificar horários disponíveis.'),
+            intent_detected=intent,
+            current_step=conversation.step,
+            data_collected=conversation.data,
+            action_taken="resposta_ia"
+        )
+    
+    # VERIFICAR DISPONIBILIDADE
     if intent == 'check_availability' or any(word in user_message.lower() for word in ['disponível', 'disponivel', 'horários', 'horarios', 'dias', 'quando']):
         disponibilidade = format_disponibilidade(7)
         
@@ -258,8 +301,8 @@ Está tudo certo? Responda **SIM** para confirmar ou **NÃO** para cancelar.""",
                     data_fmt = data_hora.strftime('%d/%m/%Y às %H:%M')
                     dados_salvos = conversation.data.copy()
                     
-                    # Resetar conversa
-                    reset_conversation(session_id)
+                    # Mudar step para finalizado mas NÃO resetar
+                    conversation.step = "finalizado"
                     
                     return ChatMessageResponse(
                         message=f"""✅ **Agendamento confirmado com sucesso!**
@@ -274,9 +317,16 @@ Está tudo certo? Responda **SIM** para confirmar ou **NÃO** para cancelar.""",
 
 Enviamos um email de confirmação para {dados_salvos['email']}.
 
-Obrigado por agendar conosco! 😊
+---
 
-Se precisar de mais alguma coisa, é só me chamar!""",
+😊 **Obrigado por agendar conosco!**
+
+Precisa de mais alguma coisa? Posso te ajudar a:
+- Agendar outra consulta
+- Ver horários disponíveis
+- Tirar dúvidas sobre a clínica
+
+É só me chamar!""",
                         intent_detected="confirm",
                         current_step="finalizado",
                         data_collected=dados_salvos,
