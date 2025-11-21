@@ -2,6 +2,7 @@ from fastapi import FastAPI
 from config import get_settings
 from services.google_calendar_service import test_calendar_connection
 from services.trello_service import test_trello_connection
+from routers import scheduling
 
 settings = get_settings()
 
@@ -10,6 +11,9 @@ app = FastAPI(
     description="Backend para chatbot de agendamento com Google Calendar e Trello",
     version="0.1.0"
 )
+
+# Incluir routers
+app.include_router(scheduling.router)
 
 
 @app.get("/")
