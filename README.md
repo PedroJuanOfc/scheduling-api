@@ -1,44 +1,80 @@
 # 🤖 Chatbot de Agendamento com IA
 
-Sistema completo de agendamento com chatbot inteligente que processa linguagem natural, cria eventos no Google Calendar e cards no Trello automaticamente.
+Sistema completo de agendamento com chatbot inteligente que processa linguagem natural, cria eventos no Google Calendar, cards no Trello e responde perguntas sobre a clínica usando RAG (Retrieval Augmented Generation).
 
 ![Python](https://img.shields.io/badge/Python-3.10+-blue.svg)
 ![FastAPI](https://img.shields.io/badge/FastAPI-0.100+-green.svg)
+![OpenAI](https://img.shields.io/badge/OpenAI-GPT--4o--mini-orange.svg)
+![LangChain](https://img.shields.io/badge/LangChain-RAG-purple.svg)
 ![License](https://img.shields.io/badge/License-MIT-yellow.svg)
 
 ## 📋 Funcionalidades
 
-- ✅ **Processamento de Linguagem Natural** com Google Gemini
+- ✅ **Processamento de Linguagem Natural** com OpenAI GPT-4o-mini
+- ✅ **RAG (Retrieval Augmented Generation)** - Responde perguntas sobre a clínica baseado em PDFs
 - ✅ **Integração com Google Calendar** - Cria eventos automaticamente
 - ✅ **Integração com Trello** - Cria cards vinculados aos eventos
-- ✅ **Detecção Inteligente de Datas** - Entende "amanhã", "próxima semana", etc.
+- ✅ **Detecção Inteligente de Datas** - Entende "amanhã", "dia 25 às 14h", etc.
 - ✅ **Verificação de Disponibilidade** - Mostra horários livres
+- ✅ **Fluxo de Conversa Completo** - Coleta nome, telefone, email, especialidade e data
+- ✅ **Banco de Dados SQLite** - Armazena pacientes e agendamentos
 - ✅ **Interface de Chat Moderna** - Frontend responsivo e bonito
 - ✅ **API REST Completa** - Documentação automática com Swagger
 
 ## 🎯 Demonstração
 
 **Exemplos de interação:**
-```
-Você: "Quero marcar uma consulta amanhã às 14h"
-Bot: "✅ Consulta agendada com sucesso para 22/11/2025 às 14:00!
-      📅 Evento criado no Google Calendar
-      ✅ Card criado no Trello"
 
-Você: "Quais horários estão disponíveis essa semana?"
-Bot: "Encontrei horários disponíveis nos próximos 7 dias:
-      📅 22/11/2025 (Friday): 09:00, 10:00, 14:00, 15:00
-      📅 25/11/2025 (Monday): 09:00, 11:00, 16:00"
+### Agendamento
+```
+Você: "Quero agendar uma consulta"
+Bot: "Para qual especialidade você gostaria de agendar?
+      🩺 Clínica Geral
+      🦷 Odontologia
+      👁️ Oftalmologia
+      ❤️ Cardiologia"
+
+Você: "Cardiologia"
+Bot: "Para realizar o agendamento, preciso de alguns dados.
+      Qual é o seu nome completo?"
+
+Você: "João Silva"
+Bot: "Obrigado, João! 😊 Qual é o seu telefone para contato?"
+
+... (coleta email e data) ...
+
+Bot: "✅ Agendamento confirmado com sucesso!
+      📅 Cardiologia
+      🗓️ Data: 25/11/2025 às 14:00
+      👤 Paciente: João Silva"
+```
+
+### Perguntas sobre a Clínica (RAG)
+```
+Você: "Quanto custa a consulta de cardiologia?"
+Bot: "A consulta cardiológica custa R$ 180,00.
+      Posso te ajudar com mais alguma coisa? 😊"
+
+Você: "Quais exames de oftalmologia vocês fazem?"
+Bot: "Os serviços de oftalmologia incluem:
+      - Exame de vista completo
+      - Mapeamento de retina
+      - Teste de pressão ocular
+      - Prescrição de lentes"
 ```
 
 ## 🚀 Tecnologias Utilizadas
 
 ### Backend
 - **FastAPI** - Framework web moderno e rápido
-- **Python 3.8+** - Linguagem principal
-- **Google Gemini API** - Processamento de linguagem natural
+- **Python 3.10+** - Linguagem principal
+- **OpenAI GPT-4o-mini** - Processamento de linguagem natural
+- **LangChain** - Framework para RAG
+- **ChromaDB** - Banco de vetores para RAG
 - **Google Calendar API** - Gerenciamento de eventos
 - **Trello API** - Gerenciamento de cards
+- **SQLAlchemy** - ORM para banco de dados
+- **SQLite** - Banco de dados local
 - **Pydantic** - Validação de dados
 
 ### Frontend
@@ -47,10 +83,10 @@ Bot: "Encontrei horários disponíveis nos próximos 7 dias:
 
 ## 📦 Pré-requisitos
 
-- Python 3.8 ou superior
+- Python 3.10 ou superior
 - Conta Google (para Calendar API)
 - Conta Trello (para Trello API)
-- Conta Google AI Studio (para Gemini API - gratuita)
+- Conta OpenAI com créditos (para GPT-4o-mini)
 
 ## 🔧 Instalação
 
@@ -81,12 +117,14 @@ pip install -r requirements.txt
 
 ## 🔑 Configuração das APIs
 
-### 1. Google Gemini API (IA)
+### 1. OpenAI API
 
-1. Acesse: [https://aistudio.google.com/app/apikey](https://aistudio.google.com/app/apikey)
-2. Faça login com sua conta Google
-3. Clique em **"Get API Key"** ou **"Create API Key"**
-4. Copie a API Key gerada
+1. Acesse: [https://platform.openai.com/signup](https://platform.openai.com/signup)
+2. Crie uma conta e adicione créditos em: [https://platform.openai.com/account/billing](https://platform.openai.com/account/billing)
+3. Crie uma API Key em: [https://platform.openai.com/api-keys](https://platform.openai.com/api-keys)
+4. Copie a API Key (começa com `sk-...`)
+
+> 💡 **Custo estimado:** ~$0.80/mês para 20 usuários/dia
 
 ### 2. Google Calendar API
 
@@ -168,7 +206,7 @@ https://trello.com/1/authorize?key=SUA_API_KEY&name=ChatbotAgendamento&expiratio
 
 ## ⚙️ Configuração do Arquivo .env
 
-Crie um arquivo `.env` na raiz do projeto com o seguinte conteúdo:
+Crie um arquivo `.env` na raiz do projeto:
 ```env
 # Google Calendar API
 GOOGLE_CALENDAR_CREDENTIALS_FILE=credentials.json
@@ -176,48 +214,74 @@ GOOGLE_CALENDAR_TOKEN_FILE=token.json
 GOOGLE_CALENDAR_ID=primary
 
 # Trello API
-TRELLO_API_KEY=sua_api_key_aqui
-TRELLO_TOKEN=seu_token_aqui
-TRELLO_BOARD_ID=seu_board_id_aqui
-TRELLO_LIST_ID=seu_list_id_aqui
+TRELLO_API_KEY=sua_api_key_trello
+TRELLO_TOKEN=seu_token_trello
+TRELLO_BOARD_ID=seu_board_id
+TRELLO_LIST_ID=seu_list_id
 
-# Google Gemini API
-GEMINI_API_KEY=sua_gemini_api_key_aqui
+# OpenAI API
+OPENAI_API_KEY=sua_api_key_openai
+
+# Google Gemini API (opcional, para fallback)
+GEMINI_API_KEY=sua_api_key_gemini
+
+# Informações da Clínica
+CLINICA_NOME=Clínica Saúde Total
+CLINICA_ENDERECO=Rua Exemplo, 123 - Centro
+CLINICA_TELEFONE=(11) 3333-4444
+CLINICA_EMAIL=contato@clinica.com.br
 
 # Configurações da Aplicação
 API_HOST=0.0.0.0
 API_PORT=8000
 ```
 
-**Substitua os valores:**
-- `sua_api_key_aqui` → API Key do Trello
-- `seu_token_aqui` → Token do Trello
-- `seu_board_id_aqui` → Board ID do Trello
-- `seu_list_id_aqui` → List ID do Trello
-- `sua_gemini_api_key_aqui` → API Key do Gemini
+## 📄 Configurando o RAG (Base de Conhecimento)
+
+O chatbot pode responder perguntas sobre a clínica usando documentos PDF.
+
+### 1. Criar a pasta de documentos
+```bash
+mkdir documents
+```
+
+### 2. Adicionar PDFs
+Coloque arquivos PDF com informações da clínica na pasta `documents/`. Exemplo de conteúdo:
+- Preços das consultas
+- Procedimentos oferecidos
+- Informações sobre especialidades
+- Formas de pagamento
+- Convênios aceitos
+
+### 3. Indexar os documentos
+Acesse: `http://127.0.0.1:8000/docs`
+- Vá em **POST /clinica/reindex**
+- Clique em "Try it out" → "Execute"
 
 ## ▶️ Executando o Projeto
 
-### 1. Iniciar o Backend
+### 1. Inicializar o Banco de Dados
+```bash
+python -m database.init_db
+```
+
+### 2. Iniciar o Backend
 ```bash
 uvicorn main:app --reload
 ```
 
 O servidor estará rodando em: `http://127.0.0.1:8000`
 
-### 2. Fazer a Primeira Autenticação do Google Calendar
+### 3. Fazer a Primeira Autenticação do Google Calendar
 
 1. Acesse: `http://127.0.0.1:8000/test-google-calendar`
 2. Uma janela do navegador abrirá pedindo permissão
-3. **Se aparecer "Google hasn't verified this app":**
-   - Clique em **"Advanced"** (Avançado)
-   - Clique em **"Go to Chatbot Agendamento (unsafe)"**
-4. Clique em **"Allow"** (Permitir)
-5. Um arquivo `token.json` será criado automaticamente
+3. Clique em **"Allow"** (Permitir)
+4. Um arquivo `token.json` será criado automaticamente
 
-### 3. Abrir o Frontend
+### 4. Abrir o Frontend
 
-Abra o arquivo `frontend/index.html` no navegador:
+Abra o arquivo `frontend/index.html` **diretamente** no navegador (não use Live Server):
 
 **Windows:**
 ```bash
@@ -234,7 +298,7 @@ xdg-open frontend/index.html
 open frontend/index.html
 ```
 
-Ou simplesmente arraste o arquivo para o navegador.
+> ⚠️ **Importante:** Não use Live Server do VS Code, pois pode causar reloads inesperados.
 
 ## 📚 Documentação da API
 
@@ -242,68 +306,29 @@ Acesse a documentação interativa em: `http://127.0.0.1:8000/docs`
 
 ### Principais Endpoints
 
-#### POST /chatbot/message
-Envia mensagem em linguagem natural para o chatbot.
+#### Chatbot
 
-**Request:**
-```json
-{
-  "message": "Quero marcar uma consulta amanhã às 14h"
-}
-```
+| Método | Endpoint | Descrição |
+|--------|----------|-----------|
+| POST | `/chatbot/message` | Envia mensagem para o chatbot |
+| POST | `/chatbot/reset` | Reinicia a conversa |
 
-**Response:**
-```json
-{
-  "message": "✅ Consulta agendada com sucesso para 22/11/2025 às 14:00!...",
-  "intent_detected": "create_appointment",
-  "parameters_extracted": {...},
-  "action_taken": "create_appointment",
-  "data": {
-    "calendar_event_id": "...",
-    "event_link": "...",
-    "trello_card_id": "..."
-  }
-}
-```
+#### Clínica / RAG
 
-#### POST /scheduling/check-availability
-Verifica disponibilidade nos próximos N dias.
+| Método | Endpoint | Descrição |
+|--------|----------|-----------|
+| GET | `/clinica/info` | Informações da clínica |
+| GET | `/clinica/especialidades` | Lista especialidades |
+| POST | `/clinica/reindex` | Reindexa documentos PDF |
+| POST | `/clinica/ask` | Pergunta direta ao RAG |
 
-**Request:**
-```json
-{
-  "days": 7
-}
-```
+#### Agendamento
 
-#### POST /scheduling/create-appointment
-Cria agendamento manualmente (estruturado).
-
-#### GET /scheduling/appointments
-Lista agendamentos futuros.
-
-## 🧪 Testando
-
-### Testar Conexões
-```bash
-# Testar Google Calendar
-curl http://127.0.0.1:8000/test-google-calendar
-
-# Testar Trello
-curl http://127.0.0.1:8000/test-trello
-
-# Testar Gemini
-curl http://127.0.0.1:8000/test-gemini
-```
-
-### Exemplos de Mensagens para o Chatbot
-
-- "Quais horários estão disponíveis essa semana?"
-- "Quero marcar uma consulta amanhã às 14h"
-- "Marcar consulta dia 25 às 10h"
-- "Lista meus agendamentos"
-- "Quero agendar para próxima terça às 15h"
+| Método | Endpoint | Descrição |
+|--------|----------|-----------|
+| POST | `/scheduling/check-availability` | Verifica disponibilidade |
+| POST | `/scheduling/create-appointment` | Cria agendamento manual |
+| GET | `/scheduling/appointments` | Lista agendamentos |
 
 ## 📁 Estrutura do Projeto
 ```
@@ -312,28 +337,46 @@ chatbot-agendamento-backend/
 │   ├── index.html
 │   ├── style.css
 │   └── script.js
+├── database/
+│   ├── __init__.py
+│   ├── database.py
+│   ├── models.py
+│   └── init_db.py
 ├── models/
 │   ├── __init__.py
 │   └── schemas.py
 ├── routers/
 │   ├── __init__.py
 │   ├── chatbot.py
+│   ├── clinica.py
 │   └── scheduling.py
 ├── services/
 │   ├── __init__.py
+│   ├── openai_service.py
+│   ├── rag_service.py
+│   ├── conversation_service.py
 │   ├── gemini_service.py
 │   ├── google_calendar_service.py
 │   └── trello_service.py
-├── .env
-├── .env.example
+├── documents/           # PDFs para RAG (não commitado)
+├── chroma_db/           # Banco de vetores (não commitado)
+├── .env                 # Variáveis de ambiente (não commitado)
 ├── .gitignore
 ├── config.py
-├── credentials.json
+├── credentials.json     # Credenciais Google (não commitado)
 ├── main.py
 ├── README.md
 ├── requirements.txt
-└── token.json
+└── token.json           # Token Google (não commitado)
 ```
+
+## 💰 Custos Estimados
+
+| Serviço | Custo |
+|---------|-------|
+| OpenAI GPT-4o-mini | ~$0.80/mês (20 usuários/dia) |
+| Google Calendar API | Gratuito |
+| Trello API | Gratuito |
 
 ## 🔒 Segurança
 
@@ -341,6 +384,8 @@ chatbot-agendamento-backend/
 - `.env`
 - `credentials.json`
 - `token.json`
+- `documents/`
+- `chroma_db/`
 
 Eles contêm informações sensíveis e já estão listados no `.gitignore`.
 
@@ -348,19 +393,20 @@ Eles contêm informações sensíveis e já estão listados no `.gitignore`.
 
 ### Erro: "Arquivo credentials.json não encontrado"
 - Certifique-se de que o arquivo `credentials.json` está na raiz do projeto
-- Verifique se seguiu todos os passos da configuração do Google Calendar API
 
 ### Erro: "Google hasn't verified this app"
-- Isso é normal em modo de desenvolvimento
 - Clique em "Advanced" → "Go to Chatbot Agendamento (unsafe)"
 
 ### Erro 403 no Trello
 - Verifique se a API Key e Token estão corretos no `.env`
-- Certifique-se de que o Token tem permissões de leitura e escrita
 
-### CORS Error no Frontend
-- Certifique-se de que o backend está rodando
-- Verifique se o `main.py` tem o middleware CORS configurado
+### Frontend reiniciando sozinho
+- Não use Live Server do VS Code
+- Abra o `index.html` diretamente no navegador
+
+### RAG não responde
+- Execute `POST /clinica/reindex` para indexar os documentos
+- Verifique se há PDFs na pasta `documents/`
 
 ## 🤝 Contribuindo
 
@@ -378,7 +424,6 @@ Este projeto está sob a licença MIT.
 ## 👨‍💻 Autor
 
 Desenvolvido com ❤️ por Pedro Juan
-
 
 ---
 
