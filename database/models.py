@@ -20,7 +20,7 @@ class Paciente(Base):
     
     id = Column(Integer, primary_key=True, index=True)
     nome = Column(String(200), nullable=False)
-    telefone = Column(String(20), nullable=False)
+    telefone = Column(String(20), unique=True, nullable=False, index=True)
     email = Column(String(200), nullable=False)
     criado_em = Column(DateTime, default=datetime.utcnow)
     

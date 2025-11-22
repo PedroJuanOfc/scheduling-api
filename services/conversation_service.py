@@ -1,7 +1,7 @@
 from datetime import datetime
 from typing import Optional
 from database.database import SessionLocal
-from database.models import Especialidade
+from database.models import Especialidade, Paciente
 
 conversations = {}
 
@@ -18,7 +18,8 @@ class ConversationState:
             "especialidade_id": None,
             "especialidade_nome": None,
             "data_hora": None,
-            "intent": None
+            "intent": None,
+            "paciente_id": None
         }
         self.created_at = datetime.now()
         self.last_interaction = datetime.now()
@@ -99,5 +100,25 @@ def get_all_especialidades() -> list:
             {"id": esp.id, "nome": esp.nome, "icone": esp.icone}
             for esp in especialidades
         ]
+    finally:
+        db.close()
+        
+def get_paciente_by_telefone(telefone: str) -> Optional[dict]:
+    db = SessionLocal()
+    try:
+        telefone_limpo = ''.join(filter(str.isdigit, telefone))
+        
+        paciente = db.query(Paciente).filter(
+            Paciente.telefone.contains(telefone_limpo[-8:])
+        ).first()
+        
+        if paciente:
+            return {
+                "id": paciente.id,
+                "nome": paciente.nome,
+                "telefone": paciente.telefone,
+                "email": paciente.email
+            }
+        return None
     finally:
         db.close()

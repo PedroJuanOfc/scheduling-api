@@ -10,7 +10,8 @@ from services.conversation_service import (
     reset_conversation,
     get_apresentacao,
     get_especialidade_by_name,
-    get_all_especialidades
+    get_all_especialidades,
+    get_paciente_by_telefone
 )
 from database.database import get_db
 from database.models import Paciente, Agendamento
@@ -68,9 +69,6 @@ def process_chat_message(request: ChatMessage, db: Session = Depends(get_db)):
     conversation = get_or_create_conversation(session_id)
     user_message = request.message.strip()
     
-    # ==========================================
-    # PRIMEIRO: Verificar se é pergunta sobre a clínica (RAG)
-    # ==========================================
     if is_question_about_clinic(user_message):
         try:
             rag_result = ask_question(user_message)
@@ -86,7 +84,6 @@ def process_chat_message(request: ChatMessage, db: Session = Depends(get_db)):
         except Exception as e:
             print(f"Erro no RAG: {e}")
     
-    # Se é uma nova conversa, mostrar apresentação
     if conversation.step == "apresentacao":
         conversation.step = "aguardando_intent"
         return ChatMessageResponse(
@@ -97,9 +94,6 @@ def process_chat_message(request: ChatMessage, db: Session = Depends(get_db)):
             action_taken="apresentacao"
         )
     
-    # ==========================================
-    # SEGUNDO: Processar mensagem com IA
-    # ==========================================
     context = {
         "step": conversation.step,
         **conversation.data
@@ -109,11 +103,22 @@ def process_chat_message(request: ChatMessage, db: Session = Depends(get_db)):
     intent = ai_result.get('intent', 'greeting')
     extracted = ai_result.get('extracted_data', {})
     
-    # Atualizar dados extraídos
     if extracted.get('nome'):
         conversation.update(nome=extracted['nome'])
+    
     if extracted.get('telefone'):
-        conversation.update(telefone=extracted['telefone'])
+        telefone = extracted['telefone']
+        conversation.update(telefone=telefone)
+        
+        paciente_existente = get_paciente_by_telefone(telefone)
+        if paciente_existente:
+            print(f"✅ Paciente encontrado: {paciente_existente['nome']}")
+            conversation.update(
+                nome=paciente_existente['nome'],
+                email=paciente_existente['email'],
+                paciente_id=paciente_existente['id']
+            )
+    
     if extracted.get('email'):
         conversation.update(email=extracted['email'])
     if extracted.get('especialidade'):
@@ -126,9 +131,6 @@ def process_chat_message(request: ChatMessage, db: Session = Depends(get_db)):
     if extracted.get('start_datetime'):
         conversation.update(data_hora=extracted['start_datetime'])
     
-    # ==========================================
-    # Se conversa está finalizada
-    # ==========================================
     if conversation.step == "finalizado":
         palavras_novo_agendamento = ['agendar', 'marcar', 'consulta', 'outra', 'nova']
         if any(word in user_message.lower() for word in palavras_novo_agendamento):
@@ -140,7 +142,8 @@ def process_chat_message(request: ChatMessage, db: Session = Depends(get_db)):
                 "especialidade_id": None,
                 "especialidade_nome": None,
                 "data_hora": None,
-                "intent": "create_appointment"
+                "intent": "create_appointment",
+                "paciente_id": None
             }
             
             especialidades = get_all_especialidades()
@@ -154,7 +157,6 @@ def process_chat_message(request: ChatMessage, db: Session = Depends(get_db)):
                 action_taken="novo_agendamento"
             )
         
-        # Resposta padrão para conversa finalizada
         return ChatMessageResponse(
             message="Posso te ajudar com mais alguma coisa? Você pode agendar outra consulta ou tirar dúvidas sobre a clínica.",
             intent_detected=intent,
@@ -163,12 +165,8 @@ def process_chat_message(request: ChatMessage, db: Session = Depends(get_db)):
             action_taken="resposta_finalizado"
         )
     
-    # ==========================================
-    # VERIFICAR DISPONIBILIDADE (só se pedir explicitamente)
-    # ==========================================
     palavras_disponibilidade = ['disponível', 'disponivel', 'horários', 'horarios', 'vagas', 'agenda']
     if intent == 'check_availability' or any(word in user_message.lower() for word in palavras_disponibilidade):
-        # Só mostra disponibilidade se não for uma pergunta de preço
         if not is_question_about_clinic(user_message):
             disponibilidade = format_disponibilidade(7)
             
@@ -187,9 +185,6 @@ def process_chat_message(request: ChatMessage, db: Session = Depends(get_db)):
                 action_taken="mostrando_disponibilidade"
             )
     
-    # ==========================================
-    # Detectar intenção de agendamento
-    # ==========================================
     palavras_agendamento = ['agendar', 'marcar', 'consulta', 'consultar', 'quero', 'gostaria', 'preciso']
     
     if conversation.step == "aguardando_intent":
@@ -198,12 +193,8 @@ def process_chat_message(request: ChatMessage, db: Session = Depends(get_db)):
             conversation.update(intent=intent)
             conversation.step = "coletando_dados"
     
-    # ==========================================
-    # Coleta de dados para agendamento
-    # ==========================================
     if conversation.step in ["coletando_dados", "aguardando_especialidade", "aguardando_nome", "aguardando_telefone", "aguardando_email", "aguardando_data"] or intent in ['provide_name', 'provide_phone', 'provide_email', 'provide_specialty', 'provide_datetime', 'create_appointment']:
         
-        # Verificar especialidade
         if not conversation.data.get('especialidade_id'):
             especialidades = get_all_especialidades()
             lista = "\n".join([f"   {e['icone']} {e['nome']}" for e in especialidades])
@@ -216,54 +207,50 @@ def process_chat_message(request: ChatMessage, db: Session = Depends(get_db)):
                 action_taken="solicitando_especialidade"
             )
         
-        # Verificar nome
-        if not conversation.data.get('nome'):
-            conversation.step = "aguardando_nome"
-            return ChatMessageResponse(
-                message="Para realizar o agendamento, preciso de alguns dados.\n\nQual é o seu **nome completo**?",
-                intent_detected=intent,
-                current_step=conversation.step,
-                data_collected=conversation.data,
-                action_taken="solicitando_nome"
-            )
-        
-        # Verificar telefone
         if not conversation.data.get('telefone'):
             conversation.step = "aguardando_telefone"
-            primeiro_nome = conversation.data['nome'].split()[0]
             return ChatMessageResponse(
-                message=f"Obrigado, {primeiro_nome}! 😊\n\nQual é o seu **telefone** para contato?",
+                message="Para realizar o agendamento, preciso de alguns dados.\n\nQual é o seu **telefone** para contato?",
                 intent_detected=intent,
                 current_step=conversation.step,
                 data_collected=conversation.data,
                 action_taken="solicitando_telefone"
             )
         
-        # Verificar email
+        if not conversation.data.get('nome'):
+            conversation.step = "aguardando_nome"
+            return ChatMessageResponse(
+                message="Qual é o seu **nome completo**?",
+                intent_detected=intent,
+                current_step=conversation.step,
+                data_collected=conversation.data,
+                action_taken="solicitando_nome"
+            )
+        
         if not conversation.data.get('email'):
             conversation.step = "aguardando_email"
+            primeiro_nome = conversation.data['nome'].split()[0]
             return ChatMessageResponse(
-                message="Ótimo! Qual é o seu **email**?\n\n(Enviaremos a confirmação do agendamento)",
+                message=f"Obrigado, {primeiro_nome}! 😊\n\nQual é o seu **email**?\n\n(Enviaremos a confirmação do agendamento)",
                 intent_detected=intent,
                 current_step=conversation.step,
                 data_collected=conversation.data,
                 action_taken="solicitando_email"
             )
         
-        # Verificar data/hora
         if not conversation.data.get('data_hora'):
             conversation.step = "aguardando_data"
             disponibilidade = format_disponibilidade(7)
+            primeiro_nome = conversation.data['nome'].split()[0]
             
             return ChatMessageResponse(
-                message=f"Perfeito! Agora escolha a **data e horário** da consulta.\n\n{disponibilidade}\n\nQual data e horário você prefere? (Ex: dia 25 às 14h)",
+                message=f"Perfeito, {primeiro_nome}! Agora escolha a **data e horário** da consulta.\n\n{disponibilidade}\n\nQual data e horário você prefere? (Ex: dia 25 às 14h)",
                 intent_detected=intent,
                 current_step=conversation.step,
                 data_collected=conversation.data,
                 action_taken="mostrando_disponibilidade"
             )
         
-        # Todos os dados coletados - confirmar
         if conversation.is_complete():
             conversation.step = "confirmando"
             data_hora = datetime.fromisoformat(conversation.data['data_hora'])
@@ -290,16 +277,22 @@ Está tudo certo? Responda **SIM** para confirmar ou **NÃO** para cancelar.""",
         if any(word in user_message.lower() for word in palavras_confirmacao):
             if conversation.is_complete():
                 try:
-                    # Criar paciente no banco
-                    paciente = Paciente(
-                        nome=conversation.data['nome'],
-                        telefone=conversation.data['telefone'],
-                        email=conversation.data['email']
-                    )
-                    db.add(paciente)
-                    db.flush()
+                    paciente_id = conversation.data.get('paciente_id')
                     
-                    # Criar evento no Calendar
+                    if paciente_id:
+                        print(f"📋 Usando paciente existente ID: {paciente_id}")
+                    else:
+                        print(f"📋 Criando novo paciente...")
+                        paciente = Paciente(
+                            nome=conversation.data['nome'],
+                            telefone=conversation.data['telefone'],
+                            email=conversation.data['email']
+                        )
+                        db.add(paciente)
+                        db.flush()
+                        paciente_id = paciente.id
+                        print(f"✅ Paciente criado ID: {paciente_id}")
+                    
                     data_hora = datetime.fromisoformat(conversation.data['data_hora'])
                     titulo = f"{conversation.data['especialidade_nome']} - {conversation.data['nome']}"
                     
@@ -311,7 +304,6 @@ Está tudo certo? Responda **SIM** para confirmar ou **NÃO** para cancelar.""",
                         attendee_email=conversation.data['email']
                     )
                     
-                    # Criar card no Trello
                     trello_card = None
                     try:
                         trello_card = create_trello_card(
@@ -322,11 +314,10 @@ Está tudo certo? Responda **SIM** para confirmar ou **NÃO** para cancelar.""",
                             calendar_event_link=calendar_event.get('event_link')
                         )
                     except Exception as trello_error:
-                        print(f"Erro no Trello {trello_error}")
+                        print(f"Erro no Trello: {trello_error}")
 
-                    # Salvar agendamento no banco
                     agendamento = Agendamento(
-                        paciente_id=paciente.id,
+                        paciente_id=paciente_id,
                         especialidade_id=conversation.data['especialidade_id'],
                         data_hora=data_hora,
                         calendar_event_id=calendar_event.get('event_id'),
@@ -394,9 +385,6 @@ Precisa de mais alguma coisa? Posso te ajudar a:
                 action_taken="cancelado"
             )
     
-    # ==========================================
-    # Cancelar em qualquer momento
-    # ==========================================
     palavras_cancelar = ['cancelar', 'voltar', 'recomeçar', 'desistir', 'sair']
     if any(word in user_message.lower() for word in palavras_cancelar):
         reset_conversation(session_id)
@@ -408,9 +396,6 @@ Precisa de mais alguma coisa? Posso te ajudar a:
             action_taken="cancelado"
         )
     
-    # ==========================================
-    # Resposta padrão
-    # ==========================================
     return ChatMessageResponse(
         message="Como posso ajudar? Você pode:\n- Agendar uma consulta\n- Tirar dúvidas sobre preços e procedimentos",
         intent_detected=intent,
