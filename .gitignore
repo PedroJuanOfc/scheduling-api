@@ -76,3 +76,4 @@ config_local.py
 
 # RAG - dados gerados
 chroma_db/
+whatsapp_session
