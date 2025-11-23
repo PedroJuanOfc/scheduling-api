@@ -1,5 +1,6 @@
 from trello import TrelloClient
 from datetime import datetime
+import requests
 from config import get_settings
 
 settings = get_settings()
@@ -24,7 +25,6 @@ def test_trello_connection():
     try:
         client = get_trello_client()
         
-        # Verificar se o board_id está configurado
         if not settings.trello_board_id:
             return {
                 "success": False,
@@ -32,10 +32,7 @@ def test_trello_connection():
                 "message": "Configure o ID do board do Trello"
             }
         
-        # Buscar informações do board
         board = client.get_board(settings.trello_board_id)
-        
-        # Buscar listas do board
         lists = board.list_lists()
         list_names = [lst.name for lst in lists]
         
@@ -70,14 +67,12 @@ def create_trello_card(
 ):
     client = get_trello_client()
     
-    # Verificar se list_id está configurado
     if not settings.trello_list_id:
         raise ValueError(
             "TRELLO_LIST_ID não configurado no .env. "
             "Configure o ID da lista onde os cards serão criados."
         )
     
-    # Buscar a lista
     board = client.get_board(settings.trello_board_id)
     trello_list = None
     
@@ -89,7 +84,6 @@ def create_trello_card(
     if not trello_list:
         raise ValueError(f"Lista com ID {settings.trello_list_id} não encontrada no board")
     
-    # Montar a descrição completa
     full_description = ""
     
     if description:
@@ -104,13 +98,11 @@ def create_trello_card(
     if calendar_event_link:
         full_description += f"\n**Link do evento:** {calendar_event_link}"
     
-    # Criar o card
     card = trello_list.add_card(
         name=title,
         desc=full_description.strip()
     )
     
-    # Adicionar data de vencimento se fornecida
     if due_datetime:
         card.set_due(due_datetime)
     
@@ -152,3 +144,31 @@ def get_trello_cards(limit: int = 20):
         })
     
     return formatted_cards
+
+
+def archive_trello_card(card_id: str) -> bool:
+    try:
+        url = f"https://api.trello.com/1/cards/{card_id}"
+        params = {
+            'key': settings.trello_api_key,
+            'token': settings.trello_token,
+            'closed': 'true'
+        }
+        response = requests.put(url, params=params)
+        return response.status_code == 200
+    except Exception:
+        return False
+
+
+def update_trello_card(card_id: str, due_datetime: datetime) -> bool:
+    try:
+        url = f"https://api.trello.com/1/cards/{card_id}"
+        params = {
+            'key': settings.trello_api_key,
+            'token': settings.trello_token,
+            'due': due_datetime.isoformat()
+        }
+        response = requests.put(url, params=params)
+        return response.status_code == 200
+    except Exception:
+        return False
