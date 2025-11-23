@@ -19,8 +19,13 @@ class ConversationState:
             "especialidade_nome": None,
             "data_hora": None,
             "intent": None,
-            "paciente_id": None
+            "paciente_id": None,
+            "consulta_remarcar_id": None,
+            "consulta_cancelar_id": None,
+            "consultas_disponiveis": None
         }
+        self.last_question = None
+        self.history = []
         self.created_at = datetime.now()
         self.last_interaction = datetime.now()
     
@@ -28,6 +33,18 @@ class ConversationState:
         for key, value in kwargs.items():
             if key in self.data:
                 self.data[key] = value
+            elif key == 'last_question':
+                self.last_question = value
+        self.last_interaction = datetime.now()
+    
+    def add_message(self, role: str, content: str):
+        self.history.append({
+            "role": role,
+            "content": content,
+            "timestamp": datetime.now().isoformat()
+        })
+        if len(self.history) > 20:
+            self.history = self.history[-20:]
         self.last_interaction = datetime.now()
     
     def is_complete(self) -> bool:
@@ -103,22 +120,23 @@ def get_all_especialidades() -> list:
     finally:
         db.close()
         
+
 def get_paciente_by_telefone(telefone: str) -> Optional[dict]:
     db = SessionLocal()
     try:
         telefone_limpo = ''.join(filter(str.isdigit, telefone))
+        todos_pacientes = db.query(Paciente).all()
         
-        paciente = db.query(Paciente).filter(
-            Paciente.telefone.contains(telefone_limpo[-8:])
-        ).first()
+        for paciente in todos_pacientes:
+            tel_banco_limpo = ''.join(filter(str.isdigit, paciente.telefone))
+            if telefone_limpo[-9:] == tel_banco_limpo[-9:]:
+                return {
+                    "id": paciente.id,
+                    "nome": paciente.nome,
+                    "telefone": paciente.telefone,
+                    "email": paciente.email
+                }
         
-        if paciente:
-            return {
-                "id": paciente.id,
-                "nome": paciente.nome,
-                "telefone": paciente.telefone,
-                "email": paciente.email
-            }
         return None
     finally:
         db.close()
