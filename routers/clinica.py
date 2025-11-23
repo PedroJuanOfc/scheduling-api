@@ -1,5 +1,6 @@
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
+from pydantic import BaseModel
 from database.database import get_db
 from database.models import Especialidade
 from config import get_settings
@@ -12,6 +13,8 @@ router = APIRouter(
     tags=["Clínica"]
 )
 
+class QuestionRequest(BaseModel):
+    question: str
 
 @router.get("/info")
 def get_clinica_info():
@@ -21,7 +24,6 @@ def get_clinica_info():
         "telefone": settings.clinica_telefone,
         "email": settings.clinica_email
     }
-
 
 @router.get("/especialidades")
 def get_especialidades(db: Session = Depends(get_db)):
@@ -39,7 +41,6 @@ def get_especialidades(db: Session = Depends(get_db)):
             for esp in especialidades
         ]
     }
-
 
 @router.get("/apresentacao")
 def get_apresentacao(db: Session = Depends(get_db)):
@@ -77,5 +78,5 @@ def reindex_documents():
 
 
 @router.post("/ask")
-def ask_clinic_question(question: str):
-    return ask_question(question)
+def ask_clinic_question(request: QuestionRequest):
+    return ask_question(request.question)
