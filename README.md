@@ -1,112 +1,69 @@
-# 🤖 Chatbot de Agendamento com IA
+# Sistema de Agendamento Inteligente para WhatsApp
 
-Sistema completo de agendamento com chatbot inteligente que processa linguagem natural, cria eventos no Google Calendar, cards no Trello e responde perguntas sobre a clínica usando RAG (Retrieval Augmented Generation).
+Sistema completo de agendamento via WhatsApp com IA que processa linguagem natural, reconhece sintomas, gerencia consultas e integra automaticamente com Google Calendar e Trello.
 
 ![Python](https://img.shields.io/badge/Python-3.10+-blue.svg)
 ![FastAPI](https://img.shields.io/badge/FastAPI-0.100+-green.svg)
 ![OpenAI](https://img.shields.io/badge/OpenAI-GPT--4o--mini-orange.svg)
-![LangChain](https://img.shields.io/badge/LangChain-RAG-purple.svg)
+![WhatsApp](https://img.shields.io/badge/WhatsApp-Bot-green.svg)
 ![License](https://img.shields.io/badge/License-MIT-yellow.svg)
 
-## 📋 Funcionalidades
+## ⚡ Principais Funcionalidades
 
-- ✅ **Processamento de Linguagem Natural** com OpenAI GPT-4o-mini
-- ✅ **RAG (Retrieval Augmented Generation)** - Responde perguntas sobre a clínica baseado em PDFs
-- ✅ **Integração com Google Calendar** - Cria eventos automaticamente
-- ✅ **Integração com Trello** - Cria cards vinculados aos eventos
-- ✅ **Detecção Inteligente de Datas** - Entende "amanhã", "dia 25 às 14h", etc.
-- ✅ **Verificação de Disponibilidade** - Mostra horários livres
-- ✅ **Fluxo de Conversa Completo** - Coleta nome, telefone, email, especialidade e data
-- ✅ **Banco de Dados SQLite** - Armazena pacientes e agendamentos
-- ✅ **Interface de Chat Moderna** - Frontend responsivo e bonito
-- ✅ **API REST Completa** - Documentação automática com Swagger
+### 🧠 Inteligência Artificial
+- **Processamento de Linguagem Natural** - Entende contexto e intenções do usuário
+- **Reconhecimento Automático de Sintomas** - Detecta especialidade necessária baseado em sintomas descritos
+- **Detecção Inteligente de Datas** - Compreende "amanhã", "segunda às 14h", "próximos 5 dias", "dezembro"
+- **Reconhecimento de Pacientes** - Identifica automaticamente pacientes já cadastrados
+- **RAG (Retrieval Augmented Generation)** - Responde perguntas sobre a clínica usando documentos PDF com vetorização
 
-## 🎯 Demonstração
+### 💬 WhatsApp
+- **Agendamento Completo** - Fluxo conversacional natural para criar consultas
+- **Gestão de Consultas** - Remarcar, cancelar e consultar agendamentos futuros
+- **Múltiplas Consultas** - Gerencia pacientes com várias consultas agendadas
+- **Sistema de Taxas Automático** - Calcula taxas de remarcação/cancelamento conforme regras
+- **Confirmações e Notificações** - Envia detalhes da consulta via email
 
-**Exemplos de interação:**
+### 🔄 Integrações
+- **Google Calendar** - Cria, atualiza e remove eventos automaticamente
+- **Trello** - Gerencia cards de agendamentos com links para o Calendar
+- **Banco de Dados SQLite** - Armazena histórico completo de pacientes e consultas
 
-### Agendamento
-```
-Você: "Quero agendar uma consulta"
-Bot: "Para qual especialidade você gostaria de agendar?
-      🩺 Clínica Geral
-      🦷 Odontologia
-      👁️ Oftalmologia
-      ❤️ Cardiologia"
+## 🚀 Stack Tecnológica
 
-Você: "Cardiologia"
-Bot: "Para realizar o agendamento, preciso de alguns dados.
-      Qual é o seu nome completo?"
-
-Você: "João Silva"
-Bot: "Obrigado, João! 😊 Qual é o seu telefone para contato?"
-
-... (coleta email e data) ...
-
-Bot: "✅ Agendamento confirmado com sucesso!
-      📅 Cardiologia
-      🗓️ Data: 25/11/2025 às 14:00
-      👤 Paciente: João Silva"
-```
-
-### Perguntas sobre a Clínica (RAG)
-```
-Você: "Quanto custa a consulta de cardiologia?"
-Bot: "A consulta cardiológica custa R$ 180,00.
-      Posso te ajudar com mais alguma coisa? 😊"
-
-Você: "Quais exames de oftalmologia vocês fazem?"
-Bot: "Os serviços de oftalmologia incluem:
-      - Exame de vista completo
-      - Mapeamento de retina
-      - Teste de pressão ocular
-      - Prescrição de lentes"
-```
-
-## 🚀 Tecnologias Utilizadas
-
-### Backend
-- **FastAPI** - Framework web moderno e rápido
+- **FastAPI** - Framework web moderno para APIs
 - **Python 3.10+** - Linguagem principal
 - **OpenAI GPT-4o-mini** - Processamento de linguagem natural
-- **LangChain** - Framework para RAG
-- **ChromaDB** - Banco de vetores para RAG
+- **LangChain + ChromaDB** - Sistema RAG para base de conhecimento
 - **Google Calendar API** - Gerenciamento de eventos
-- **Trello API** - Gerenciamento de cards
-- **SQLAlchemy** - ORM para banco de dados
-- **SQLite** - Banco de dados local
-- **Pydantic** - Validação de dados
-
-### Frontend
-- **HTML5/CSS3/JavaScript** - Interface de chat
-- **Fetch API** - Comunicação com backend
+- **Trello API** - Gestão de cards
+- **SQLAlchemy + SQLite** - Persistência de dados
+- **Neonize** - Cliente WhatsApp para Python
 
 ## 📦 Pré-requisitos
 
 - Python 3.10 ou superior
-- Conta Google (para Calendar API)
-- Conta Trello (para Trello API)
-- Conta OpenAI com créditos (para GPT-4o-mini)
+- Conta Google com Calendar API habilitada
+- Conta Trello com API ativada
+- API Key da OpenAI
+- Número de WhatsApp Business (ou pessoal para testes)
 
 ## 🔧 Instalação
 
 ### 1. Clone o repositório
 ```bash
-git clone https://github.com/seu-usuario/chatbot-agendamento-backend.git
-cd chatbot-agendamento-backend
+git clone https://github.com/seu-usuario/chatbot-agendamento.git
+cd chatbot-agendamento
 ```
 
-### 2. Crie e ative o ambiente virtual
-
-**Windows:**
+### 2. Crie o ambiente virtual
 ```bash
 python -m venv venv
-venv\Scripts\activate
-```
 
-**Linux/Mac:**
-```bash
-python3 -m venv venv
+# Windows
+venv\Scripts\activate
+
+# Linux/Mac
 source venv/bin/activate
 ```
 
@@ -115,316 +72,199 @@ source venv/bin/activate
 pip install -r requirements.txt
 ```
 
-## 🔑 Configuração das APIs
+## 🔑 Configuração
 
 ### 1. OpenAI API
 
-1. Acesse: [https://platform.openai.com/signup](https://platform.openai.com/signup)
-2. Crie uma conta e adicione créditos em: [https://platform.openai.com/account/billing](https://platform.openai.com/account/billing)
-3. Crie uma API Key em: [https://platform.openai.com/api-keys](https://platform.openai.com/api-keys)
-4. Copie a API Key (começa com `sk-...`)
-
-> 💡 **Custo estimado:** ~$0.80/mês para 20 usuários/dia
+1. Acesse [platform.openai.com/signup](https://platform.openai.com/signup)
+2. Crie uma conta e adicione créditos
+3. Gere uma API Key em [platform.openai.com/api-keys](https://platform.openai.com/api-keys)
 
 ### 2. Google Calendar API
 
-#### 2.1. Criar Projeto no Google Cloud Console
-
-1. Acesse: [https://console.cloud.google.com/](https://console.cloud.google.com/)
-2. Clique em **"Select a project"** → **"NEW PROJECT"**
-3. Nome: `Chatbot Agendamento`
-4. Clique em **"CREATE"**
-
-#### 2.2. Ativar a API do Google Calendar
-
-1. Vá em **"APIs & Services"** → **"Library"**
-2. Busque: **"Google Calendar API"**
-3. Clique em **"ENABLE"**
-
-#### 2.3. Configurar OAuth Consent Screen
-
-1. Vá em **"APIs & Services"** → **"OAuth consent screen"**
-2. Selecione **"External"** → **"CREATE"**
-3. Preencha:
-   - **App name:** `Chatbot Agendamento`
-   - **User support email:** Seu email
-   - **Developer contact:** Seu email
-4. Clique em **"SAVE AND CONTINUE"**
-
-5. Em **"Scopes"**, clique em **"ADD OR REMOVE SCOPES"**
-6. Busque e marque: `https://www.googleapis.com/auth/calendar`
-7. Clique em **"UPDATE"** → **"SAVE AND CONTINUE"**
-
-8. Em **"Test users"**, clique em **"+ ADD USERS"**
-9. Adicione seu email → **"ADD"** → **"SAVE AND CONTINUE"**
-
-#### 2.4. Criar Credenciais OAuth
-
-1. Vá em **"APIs & Services"** → **"Credentials"**
-2. Clique em **"+ CREATE CREDENTIALS"** → **"OAuth client ID"**
-3. **Application type:** `Desktop app`
-4. **Name:** `Chatbot Agendamento Desktop`
-5. Clique em **"CREATE"**
-6. Clique em **"DOWNLOAD JSON"**
-7. Salve o arquivo como `credentials.json` na raiz do projeto
+1. Acesse o [Google Cloud Console](https://console.cloud.google.com/)
+2. Crie um novo projeto
+3. Ative a **Google Calendar API**
+4. Configure a **OAuth Consent Screen**:
+   - Tipo: External
+   - Adicione o scope: `https://www.googleapis.com/auth/calendar`
+   - Adicione seu email em "Test users"
+5. Crie credenciais **OAuth 2.0** (tipo Desktop app)
+6. Baixe o JSON e salve como `credentials.json` na raiz do projeto
 
 ### 3. Trello API
 
-#### 3.1. Criar Power-Up
-
-1. Acesse: [https://trello.com/power-ups/admin](https://trello.com/power-ups/admin)
-2. Clique em **"New"**
-3. Preencha:
-   - **Name:** `Chatbot Agendamento`
-   - **Workspace:** Selecione seu workspace
-   - **Iframe connector URL:** `http://localhost`
-4. Clique em **"Create"**
-
-#### 3.2. Obter API Key
-
-1. Na página do Power-Up, vá na aba **"API Key"**
-2. Copie a **API Key**
-
-#### 3.3. Gerar Token
-
-1. Use este link (substitua `SUA_API_KEY`):
+1. Acesse [trello.com/power-ups/admin](https://trello.com/power-ups/admin)
+2. Crie um novo Power-Up
+3. Copie a **API Key**
+4. Gere um **Token** usando:
 ```
-https://trello.com/1/authorize?key=SUA_API_KEY&name=ChatbotAgendamento&expiration=never&response_type=token&scope=read,write
+https://trello.com/1/authorize?key=SUA_API_KEY&name=AgendamentoBot&expiration=never&response_type=token&scope=read,write
 ```
-2. Clique em **"Allow"**
-3. Copie o **Token** gerado
+5. Obtenha o **Board ID** da URL do seu quadro: `trello.com/b/BOARD_ID/nome`
+6. Para o **List ID**, acesse `trello.com/b/BOARD_ID/nome.json` e procure por `"lists"`
 
-#### 3.4. Obter Board ID e List ID
+### 4. Arquivo .env
 
-1. Abra seu quadro do Trello
-2. Olhe a URL: `https://trello.com/b/aBc123Xy/nome-quadro`
-3. **Board ID** = `aBc123Xy` (parte entre `/b/` e a próxima `/`)
-
-4. Adicione `.json` na URL: `https://trello.com/b/aBc123Xy/nome-quadro.json`
-5. Busque por `"lists"` (Ctrl+F)
-6. Copie o `"id"` da lista onde quer criar os cards
-
-## ⚙️ Configuração do Arquivo .env
-
-Crie um arquivo `.env` na raiz do projeto:
+Crie um arquivo `.env` na raiz:
 ```env
-# Google Calendar API
 GOOGLE_CALENDAR_CREDENTIALS_FILE=credentials.json
 GOOGLE_CALENDAR_TOKEN_FILE=token.json
 GOOGLE_CALENDAR_ID=primary
 
-# Trello API
-TRELLO_API_KEY=sua_api_key_trello
-TRELLO_TOKEN=seu_token_trello
+TRELLO_API_KEY=sua_api_key
+TRELLO_TOKEN=seu_token
 TRELLO_BOARD_ID=seu_board_id
 TRELLO_LIST_ID=seu_list_id
 
-# OpenAI API
-OPENAI_API_KEY=sua_api_key_openai
+OPENAI_API_KEY=sk-...
 
-# Google Gemini API (opcional, para fallback)
-GEMINI_API_KEY=sua_api_key_gemini
-
-# Informações da Clínica
-CLINICA_NOME=Clínica Saúde Total
-CLINICA_ENDERECO=Rua Exemplo, 123 - Centro
+CLINICA_NOME=Clínica SaúdeMed
+CLINICA_ENDERECO=Rua Exemplo, 123
 CLINICA_TELEFONE=(11) 3333-4444
-CLINICA_EMAIL=contato@clinica.com.br
+CLINICA_EMAIL=contato@clinica.com
 
-# Configurações da Aplicação
 API_HOST=0.0.0.0
 API_PORT=8000
 ```
 
-## 📄 Configurando o RAG (Base de Conhecimento)
+## 📚 Base de Conhecimento (RAG)
 
-O chatbot pode responder perguntas sobre a clínica usando documentos PDF.
+O sistema pode responder perguntas sobre a clínica usando documentos PDF.
 
-### 1. Criar a pasta de documentos
+### 1. Adicione documentos
 ```bash
 mkdir documents
 ```
 
-### 2. Adicionar PDFs
-Coloque arquivos PDF com informações da clínica na pasta `documents/`. Exemplo de conteúdo:
-- Preços das consultas
-- Procedimentos oferecidos
-- Informações sobre especialidades
-- Formas de pagamento
+Coloque arquivos PDF na pasta `documents/` com informações como:
+- Preços e procedimentos
 - Convênios aceitos
+- Políticas de cancelamento
+- Informações sobre especialidades
 
-### 3. Indexar os documentos
-Acesse: `http://127.0.0.1:8000/docs`
-- Vá em **POST /clinica/reindex**
-- Clique em "Try it out" → "Execute"
+### 2. Indexação automática
+O ChromaDB será criado automaticamente na primeira indexação.
 
-## ▶️ Executando o Projeto
+Acesse `http://127.0.0.1:8000/docs` e execute:
+- **POST /clinica/reindex**
 
-### 1. Inicializar o Banco de Dados
+> O banco de vetores será criado em `chroma_db/` automaticamente.
+
+## ▶️ Executando o Sistema
+
+### 1. Inicialize o banco de dados
 ```bash
 python -m database.init_db
 ```
 
-### 2. Iniciar o Backend
+Isso criará:
+- `agendamentos.db` (SQLite)
+- Tabelas: `pacientes`, `especialidades`, `agendamentos`
+- Especialidades pré-cadastradas
+
+### 2. Inicie a API REST (opcional)
 ```bash
 uvicorn main:app --reload
 ```
 
-O servidor estará rodando em: `http://127.0.0.1:8000`
+Acesse a documentação em: `http://127.0.0.1:8000/docs`
 
-### 3. Fazer a Primeira Autenticação do Google Calendar
+### 3. Conecte o Google Calendar (primeira vez)
 
-1. Acesse: `http://127.0.0.1:8000/test-google-calendar`
-2. Uma janela do navegador abrirá pedindo permissão
-3. Clique em **"Allow"** (Permitir)
-4. Um arquivo `token.json` será criado automaticamente
+Acesse: `http://127.0.0.1:8000/test-google-calendar`
 
-### 4. Abrir o Frontend
+Uma janela do navegador abrirá solicitando permissões. Após autorizar, o arquivo `token.json` será criado.
 
-Abra o arquivo `frontend/index.html` **diretamente** no navegador (não use Live Server):
-
-**Windows:**
+### 4. Inicie o Bot WhatsApp
 ```bash
-start frontend\index.html
+python run_whatsapp.py
 ```
 
-**Linux:**
-```bash
-xdg-open frontend/index.html
-```
+**Primeira execução:**
+1. Um QR Code aparecerá no terminal
+2. Abra o WhatsApp no celular
+3. Vá em **Configurações** → **Aparelhos conectados**
+4. Escaneie o QR Code
 
-**Mac:**
-```bash
-open frontend/index.html
-```
+**Sessão salva:**
+- A sessão é salva em `whatsapp_session/`
+- Nas próximas execuções, conectará automaticamente
 
-> ⚠️ **Importante:** Não use Live Server do VS Code, pois pode causar reloads inesperados.
+## 🎨 Funcionalidades Avançadas
 
-## 📚 Documentação da API
+### Reconhecimento de Sintomas
+O bot detecta automaticamente a especialidade baseado em palavras-chave:
 
-Acesse a documentação interativa em: `http://127.0.0.1:8000/docs`
+- **Oftalmologia:** olho, vista, visão, enxergar, óculos
+- **Cardiologia:** peito, coração, pressão, batimento
+- **Odontologia:** dente, boca, gengiva, canal, cárie
+- **Clínica Geral:** febre, gripe, tosse, dor de cabeça
 
-### Principais Endpoints
+### Sistema de Taxas Inteligente
 
-#### Chatbot
+- **1ª Remarcação:** Gratuita
+- **2ª+ Remarcação:** R$ 30,00
+- **Remarcação <24h:** R$ 50,00
+- **Cancelamento <24h:** R$ 50,00
+- **Cancelamento ≥24h:** Gratuito
 
-| Método | Endpoint | Descrição |
-|--------|----------|-----------|
-| POST | `/chatbot/message` | Envia mensagem para o chatbot |
-| POST | `/chatbot/reset` | Reinicia a conversa |
+### Horários de Funcionamento
 
-#### Clínica / RAG
+- **Segunda a Sexta:** 7h às 19h
+- **Sábado:** 8h às 13h
+- **Domingo:** Fechado
 
-| Método | Endpoint | Descrição |
-|--------|----------|-----------|
-| GET | `/clinica/info` | Informações da clínica |
-| GET | `/clinica/especialidades` | Lista especialidades |
-| POST | `/clinica/reindex` | Reindexa documentos PDF |
-| POST | `/clinica/ask` | Pergunta direta ao RAG |
-
-#### Agendamento
-
-| Método | Endpoint | Descrição |
-|--------|----------|-----------|
-| POST | `/scheduling/check-availability` | Verifica disponibilidade |
-| POST | `/scheduling/create-appointment` | Cria agendamento manual |
-| GET | `/scheduling/appointments` | Lista agendamentos |
-
-## 📁 Estrutura do Projeto
-```
-chatbot-agendamento-backend/
-├── frontend/
-│   ├── index.html
-│   ├── style.css
-│   └── script.js
-├── database/
-│   ├── __init__.py
-│   ├── database.py
-│   ├── models.py
-│   └── init_db.py
-├── models/
-│   ├── __init__.py
-│   └── schemas.py
-├── routers/
-│   ├── __init__.py
-│   ├── chatbot.py
-│   ├── clinica.py
-│   └── scheduling.py
-├── services/
-│   ├── __init__.py
-│   ├── openai_service.py
-│   ├── rag_service.py
-│   ├── conversation_service.py
-│   ├── gemini_service.py
-│   ├── google_calendar_service.py
-│   └── trello_service.py
-├── documents/           # PDFs para RAG (não commitado)
-├── chroma_db/           # Banco de vetores (não commitado)
-├── .env                 # Variáveis de ambiente (não commitado)
-├── .gitignore
-├── config.py
-├── credentials.json     # Credenciais Google (não commitado)
-├── main.py
-├── README.md
-├── requirements.txt
-└── token.json           # Token Google (não commitado)
-```
-
-## 💰 Custos Estimados
-
-| Serviço | Custo |
-|---------|-------|
-| OpenAI GPT-4o-mini | ~$0.80/mês (20 usuários/dia) |
-| Google Calendar API | Gratuito |
-| Trello API | Gratuito |
+O sistema valida automaticamente horários fora do expediente.
 
 ## 🔒 Segurança
 
-⚠️ **IMPORTANTE:** Nunca commite os seguintes arquivos:
+**Nunca commite:**
 - `.env`
 - `credentials.json`
 - `token.json`
-- `documents/`
+- `whatsapp_session/`
 - `chroma_db/`
+- `agendamentos.db`
 
-Eles contêm informações sensíveis e já estão listados no `.gitignore`.
+Todos já estão no `.gitignore`.
 
-## 🐛 Solução de Problemas
+## 🐛 Troubleshooting
 
-### Erro: "Arquivo credentials.json não encontrado"
-- Certifique-se de que o arquivo `credentials.json` está na raiz do projeto
+### WhatsApp desconectando
+- Mantenha `run_whatsapp.py` sempre ativo
+- Evite usar a mesma conta em múltiplos dispositivos
 
-### Erro: "Google hasn't verified this app"
-- Clique em "Advanced" → "Go to Chatbot Agendamento (unsafe)"
+### Erro: "credentials.json não encontrado"
+- Baixe as credenciais OAuth do Google Cloud Console
+- Salve como `credentials.json` na raiz
 
-### Erro 403 no Trello
-- Verifique se a API Key e Token estão corretos no `.env`
+### ChromaDB não encontrado
+- Execute **POST /clinica/reindex** após adicionar PDFs
+- O banco de vetores será criado automaticamente
 
-### Frontend reiniciando sozinho
-- Não use Live Server do VS Code
-- Abra o `index.html` diretamente no navegador
+### RAG não responde corretamente
+- Verifique se há PDFs em `documents/`
+- Reindexe os documentos via API
+- Confira se a OpenAI API Key está válida
 
-### RAG não responde
-- Execute `POST /clinica/reindex` para indexar os documentos
-- Verifique se há PDFs na pasta `documents/`
+### Banco de dados não inicializa
+```bash
+# Recrie o banco
+rm agendamentos.db
+python -m database.init_db
+```
 
 ## 🤝 Contribuindo
 
-Contribuições são bem-vindas! Sinta-se à vontade para:
-1. Fazer fork do projeto
-2. Criar uma branch (`git checkout -b feature/nova-funcionalidade`)
-3. Commit suas mudanças (`git commit -m 'Adiciona nova funcionalidade'`)
-4. Push para a branch (`git push origin feature/nova-funcionalidade`)
-5. Abrir um Pull Request
+Contribuições são bem-vindas! Para contribuir:
 
-## 📝 Licença
-
-Este projeto está sob a licença MIT.
-
-## 👨‍💻 Autor
-
-Desenvolvido com ❤️ por Pedro Juan
+1. Fork o projeto
+2. Crie uma branch: `git checkout -b feature/nova-funcionalidade`
+3. Commit: `git commit -m 'Adiciona nova funcionalidade'`
+4. Push: `git push origin feature/nova-funcionalidade`
+5. Abra um Pull Request
 
 ---
 
-**⭐ Se este projeto te ajudou, considere dar uma estrela!**
+**⭐ Se este projeto foi útil, considere dar uma estrela!**
