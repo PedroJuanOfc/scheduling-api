@@ -35,13 +35,20 @@ class Agendamento(Base):
     especialidade_id = Column(Integer, ForeignKey("especialidades.id"), nullable=False)
     data_hora = Column(DateTime, nullable=False)
     duracao_minutos = Column(Integer, default=60)
-    status = Column(String(50), default="confirmado")
+    
+    status = Column(String(50), default="agendado")
+    
     observacoes = Column(Text, nullable=True)
     
     calendar_event_id = Column(String(200), nullable=True)
     trello_card_id = Column(String(200), nullable=True)
     
+    num_remarcacoes = Column(Integer, default=0)
+    data_cancelamento = Column(DateTime, nullable=True)
+    motivo_cancelamento = Column(String(500), nullable=True)
+    
     criado_em = Column(DateTime, default=datetime.utcnow)
+    atualizado_em = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     
     paciente = relationship("Paciente", back_populates="agendamentos")
     especialidade = relationship("Especialidade", back_populates="agendamentos")
